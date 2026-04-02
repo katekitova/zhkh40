@@ -1,0 +1,73 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">О платформе</p>
+        <h1>О проекте</h1>
+        <p class="hero-lead narrow-lead">
+            Этот сайт собран как практический помощник по ЖКХ: главная ведёт в чат, база знаний хранит тарифы,
+            жалобы и материалы по смене УК, а калькулятор помогает быстро прикинуть сумму.
+        </p>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="container">
+        <div class="feature-grid four-up">
+            {% for block in about_blocks %}
+                <article class="section-card info-card lifted-card">
+                    <h2>{{ block.title }}</h2>
+                    <p>{{ block.description }}</p>
+                </article>
+            {% endfor %}
+            <article class="section-card info-card lifted-card contact-card">
+                <h2>{{ contact_block.title }}</h2>
+                <p>{{ contact_block.description }}</p>
+                <a class="contact-mail" href="mailto:{{ contact_block.email }}">{{ contact_block.email }}</a>
+                <p>{{ contact_block.note }}</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="container">
+        <div class="section-card">
+            <div class="section-heading">
+                <h2>Правовые документы платформы</h2>
+                <a href="{{ url_for('knowledge') }}#legal">К юридическому разделу</a>
+            </div>
+            <div class="feature-grid three-up">
+                {% for item in legal_documents %}
+                    <article class="info-card slim-card">
+                        <p class="meta">{{ item.type }}</p>
+                        <h3>{{ item.title }}</h3>
+                        <p>{{ item.summary }}</p>
+                        <a href="{{ doc_preview_url(item.file) }}">Скачать {{ item.type }}</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card tone-soft">
+            <div class="section-heading">
+                <h2>Нормативные источники</h2>
+                <a href="{{ url_for('knowledge') }}">К базе знаний</a>
+            </div>
+            <div class="source-list">
+                {% for source in legal_sources %}
+                    <a class="source-item" href="{{ source.url }}" target="_blank" rel="noreferrer">
+                        <strong>{{ source.title }}</strong>
+                        <span>{{ source.description }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

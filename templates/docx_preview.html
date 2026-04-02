@@ -1,0 +1,35 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Предпросмотр документа</p>
+        <h1>{{ doc_title }}</h1>
+        <p class="hero-lead narrow-lead">
+            Для полного вида лучше открыть документ в Word. Ниже оставлен текстовый просмотр и кнопка скачивания.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card">
+            <div class="docx-preview-sheet">
+                {% if doc_paragraphs %}
+                    {% for paragraph in doc_paragraphs %}
+                        <p>{{ paragraph }}</p>
+                    {% endfor %}
+                {% else %}
+                    <p>Текст документа не удалось показать в окне предпросмотра. Ниже всё равно можно открыть исходный файл в Word или скачать его.</p>
+                {% endif %}
+            </div>
+
+            <div class="docx-preview-actions">
+                <a class="button-secondary" href="{{ url_for('knowledge') }}">Назад к базе знаний</a>
+                <a class="button-secondary" href="ms-word:ofe|u|{{ doc_open_url }}">Открыть в Word</a>
+                <a class="button-primary" href="{{ doc_download_url }}" download="{{ doc_filename }}">Скачать DOCX</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

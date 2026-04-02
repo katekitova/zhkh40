@@ -1,0 +1,27 @@
+﻿<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" href="{{ url_for('home') }}">
+            <span class="brand-mark">
+                <img class="brand-logo" src="{{ url_for('static', filename='img/header-logo.png') }}" alt="Логотип {{ site.name }}">
+            </span>
+            <div class="brand-copy">
+                <strong>{{ site.name }}</strong>
+                <span>{{ site.tagline }}</span>
+            </div>
+        </a>
+
+        <button class="menu-toggle" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-toggle>
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <nav class="main-nav" aria-label="Основная навигация" data-main-nav>
+            {% for item in nav_items %}
+                <a class="nav-link {% if item.active %}is-active{% endif %}" href="{{ url_for(item.endpoint) }}">
+                    {{ item.label }}
+                </a>
+            {% endfor %}
+        </nav>
+    </div>
+</header>

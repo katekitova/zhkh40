@@ -1,0 +1,14 @@
+﻿<footer class="site-footer">
+    <div class="container footer-inner footer-inner-wide">
+
+        <div class="footer-links">
+            <a href="{{ url_for('static', filename='docs/legal/Политика_конфиденциальности_ЖКХ40.pdf') }}">Политика конфиденциальности</a>
+            <a href="{{ url_for('static', filename='docs/legal/Пользовательское_соглашение_ЖКХ40.pdf') }}">Пользовательское соглашение</a>
+            <a href="{{ url_for('knowledge') }}#legal">Правовые документы</a>
+        </div>
+                <p class="footer-disclaimer">
+            Информация носит исключительно справочный характер.
+        </p>
+        <p>&copy; {{ current_year }} {{ site.name }}. {{ site.version }}</p>
+    </div>
+</footer>

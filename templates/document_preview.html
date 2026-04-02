@@ -1,0 +1,81 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Документ</p>
+        <h1>{{ preview_title }}</h1>
+        <p class="hero-lead narrow-lead">
+            Просмотр образца заявления, который можно заполнить прямо на сайте и выгрузить в документ.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container document-layout {% if print_mode %}print-layout{% endif %}">
+        {% if not print_mode %}
+            <aside class="document-note">
+                <p>* Является примером типового документа. Формулировки можно адаптировать под ситуацию.</p>
+                <p>* Материал предоставлен в информационно-справочных целях и встроен в сайт как рабочий шаблон.</p>
+            </aside>
+        {% endif %}
+
+        <div class="document-stage">
+            {% if not print_mode %}
+                <div class="document-toolbar">
+                    <a href="{{ url_for('knowledge') }}">Поделиться разделом</a>
+                    <a href="{{ url_for('recalculation_fill') }}">Заполнить форму</a>
+                    <a href="{{ url_for('static', filename='docs/journeys/ПС 1.docx') }}">Исходные сценарии</a>
+                </div>
+            {% endif %}
+
+            <article class="document-sheet">
+                <div class="document-sheet-header">
+                    <div class="document-recipient">
+                        <p>Руководителю</p>
+                        <p>{{ form_data.recipient }}</p>
+                        <p>от {{ form_data.applicant }}</p>
+                        <p>{{ form_data.address }}</p>
+                    </div>
+                </div>
+
+                <div class="document-body">
+                    <h2>Заявление</h2>
+                    <p>
+                        Прошу произвести перерасчёт размера платы за коммунальные услуги
+                        за период с <strong>{{ form_data.period_from }}</strong> по
+                        <strong>{{ form_data.period_to }}</strong>.
+                    </p>
+                    <p><strong>Причина перерасчёта:</strong> {{ form_data.reason }}</p>
+                    <p><strong>Основание:</strong> {{ form_data.basis }}</p>
+                    <p>
+                        К заявлению могут быть приложены акты замера, фотофиксация,
+                        переписка с УК, номер обращения в аварийно-диспетчерскую службу и иные документы.
+                    </p>
+                </div>
+
+                <div class="document-signature">
+                    <span>Дата ____________________</span>
+                    <span>Подпись ____________________</span>
+                </div>
+            </article>
+
+            {% if not print_mode %}
+                <div class="document-cta">
+                    <a class="button-primary" href="{{ url_for('recalculation_fill') }}">Заполнить и выгрузить</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+    {% if print_mode %}
+        <script>
+            window.addEventListener('load', function () {
+                window.print();
+            });
+        </script>
+    {% endif %}
+{% endblock %}

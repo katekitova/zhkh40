@@ -1,0 +1,115 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Вопросы и маршруты</p>
+        <h1>ЧАВО</h1>
+        <p class="hero-lead narrow-lead">
+            Здесь собраны ответы по смене УК, подсказки по жалобам, коллективным обращениям,
+            двойным квитанциям и базовым действиям по типовым проблемам в доме.
+        </p>
+    </div>
+</section>
+
+<section class="content-section" id="faq-accordion">
+    <div class="container faq-layout">
+        <div class="section-card">
+            <div class="section-heading">
+                <h2>Частые вопросы</h2>
+            </div>
+            <div class="accordion-list">
+                {% for item in faq_items %}
+                    <article class="accordion-item {% if loop.first %}is-open{% endif %}" data-accordion-item>
+                        <button type="button" class="accordion-trigger" data-accordion-trigger>
+                            <span>{{ item.question }}</span>
+                            <span class="accordion-mark">+</span>
+                        </button>
+                        <div class="accordion-body">
+                            <p>{{ item.answer }}</p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="section-card tone-soft">
+            <div class="section-heading">
+                <h2>Смена УК: дорожная карта</h2>
+            </div>
+            <div class="step-stack">
+                {% for step in management_steps %}
+                    <article class="step-card">
+                        <span class="info-badge">0{{ loop.index }}</span>
+                        <div>
+                            <h3>{{ step.title }}</h3>
+                            <p>{{ step.description }}</p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content-section" id="double-receipts">
+    <div class="container">
+        <div class="section-card tone-darkish">
+            <div class="section-heading">
+                <h2>Если пришли двойные квитанции</h2>
+                <a href="{{ url_for('knowledge') }}#management">Открыть документы по УК</a>
+            </div>
+            <div class="checklist-grid">
+                {% for step in double_receipt_steps %}
+                    <article class="check-item">
+                        <span class="soft-badge">Шаг {{ loop.index }}</span>
+                        <p>{{ step }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="container">
+        <div class="section-card">
+            <div class="section-heading">
+                <h2>Жалобы по ситуациям</h2>
+                <a href="{{ url_for('knowledge') }}#complaints">Весь раздел жалоб</a>
+            </div>
+            <div class="feature-grid four-up">
+                {% for guide in complaint_guides %}
+                    <article class="info-card slim-card">
+                        <p class="meta">{{ guide.badge }}</p>
+                        <h3>{{ guide.title }}</h3>
+                        <p>{{ guide.summary }}</p>
+                        <a href="{{ doc_preview_url(guide.file) }}">Открыть</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card tone-soft">
+            <div class="section-heading">
+                <h2>Полезные материалы по управлению домом</h2>
+                <a href="{{ url_for('knowledge') }}#management">К базе знаний</a>
+            </div>
+            <div class="feature-grid four-up">
+                {% for guide in management_guides %}
+                    <article class="info-card slim-card">
+                        <p class="meta">{{ guide.badge }}</p>
+                        <h3>{{ guide.title }}</h3>
+                        <p>{{ guide.summary }}</p>
+                        <a href="{{ doc_preview_url(guide.file) }}">Открыть</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

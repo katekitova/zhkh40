@@ -1,0 +1,49 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Сценарий обращения</p>
+        <h1>Чат-помощник по вопросам ЖКХ</h1>
+        <p class="hero-lead narrow-lead">
+            Можно идти по готовым веткам или просто написать проблему своими словами: тарифы, жалобы,
+            смена УК, отопление, вода, начисления и другие ситуации по дому.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="assistant-panel assistant-page full-width-chat" data-chat-root data-selected-scenario="{{ selected_scenario }}" data-initial-query="{{ initial_query }}" data-scenarios='{{ chat_scenarios|tojson }}' data-chat-endpoint="{{ url_for('api_chat_message') }}" data-default-title="Напишите вопрос своими словами" data-default-summary="Можно выбрать тему кнопками выше или просто описать проблему. Если найду подходящий путь, сначала уточню, правильно ли понял ваш вопрос.">
+            <div class="assistant-panel-head">
+                <div>
+                    <p class="assistant-kicker">Популярные сценарии</p>
+                    <h2 data-scenario-title>Напишите вопрос своими словами</h2>
+                </div>
+                <p class="assistant-summary" data-scenario-summary>Можно выбрать тему кнопками выше или просто описать проблему. Если найду подходящий путь, сначала уточню, правильно ли понял ваш вопрос.</p>
+            </div>
+
+            <div class="scenario-tabs scenario-tabs-wide">
+                {% for scenario in chat_scenarios %}
+                    <button type="button" class="scenario-tab {% if scenario.slug == selected_scenario %}is-active{% endif %}" data-scenario-tab data-scenario-slug="{{ scenario.slug }}">
+                        {{ scenario.title }}
+                    </button>
+                {% endfor %}
+            </div>
+
+            <div class="chat-window chat-window-large">
+                <div class="chat-messages" data-chat-messages></div>
+
+                <form class="chat-footer" data-chat-form>
+                    <label class="search-field chat-input-field">
+                        <span class="search-icon" aria-hidden="true"></span>
+                        <input type="text" name="message" placeholder="Напишите проблему обычными словами" data-chat-input value="{{ initial_query }}">
+                    </label>
+                    <button type="submit" class="button-primary" data-chat-submit>Отправить</button>
+                </form>
+                <p class="chat-storage-note">История переписки может временно сохраняться в браузере для удобства работы с сервисом.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

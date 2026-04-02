@@ -1,0 +1,54 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="content-section calculator-page-section">
+    <div class="container calculator-page-container">
+        <div class="section-card tariff-calculator-shell" data-tariff-calculator data-calculator-config='{{ calculator_config|tojson }}'>
+            <div class="tariff-calculator-head">
+                <h1>Калькулятор тарифов</h1>
+            </div>
+
+            <div class="tariff-calculator-block">
+                <div class="tariff-block-head">
+                    <h2>Выберите тип услуги</h2>
+                    <span class="tariff-block-chevron" aria-hidden="true">⌃</span>
+                </div>
+                <div class="calculator-service-switcher" data-service-switcher>
+                    {% for service in calculator_config.services %}
+                        <button type="button" class="calculator-service-button" data-service-slug="{{ service.slug }}">
+                            {{ service.label }}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="tariff-calculator-block">
+                <div class="tariff-block-head">
+                    <h2 data-service-heading>Электричество</h2>
+                    <span class="tariff-block-chevron" aria-hidden="true">⌃</span>
+                </div>
+                <p class="calculator-service-summary" data-service-summary></p>
+                <div class="calculator-dynamic-panel" data-calculator-form-area></div>
+            </div>
+
+            <div class="calculator-submit-row">
+                <button type="button" class="calculator-run-button" data-calculator-submit>Рассчитать</button>
+            </div>
+
+            <div class="calculator-result-box" data-calculator-result></div>
+        </div>
+    </div>
+</section>
+
+<section class="content-section content-section-last calculator-sources-section">
+    <div class="container calculator-page-container">
+        <div class="section-card tone-soft">
+            <div class="section-heading">
+                <h2>Разъяснения по выбранной услуге</h2>
+                <a href="{{ url_for('knowledge') }}#tariffs">Открыть базу знаний</a>
+            </div>
+            <div class="feature-grid three-up" data-calculator-guides></div>
+        </div>
+    </div>
+</section>
+{% endblock %}

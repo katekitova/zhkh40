@@ -1,0 +1,72 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Форма документа</p>
+        <h1>Форма заполнения</h1>
+        <p class="hero-lead narrow-lead">
+            Заполни основные поля, после чего можно скачать DOCX-версию или открыть печатную страницу для PDF.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card form-shell">
+            <div class="consent-modal" data-consent-modal>
+                <div class="consent-card">
+                    <h2>Условия использования</h2>
+                    <p>
+                        Нажимая «Продолжить», вы подтверждаете, что ознакомлены с примерным
+                        характером шаблона и даёте согласие на обработку введённой информации
+                        только в рамках текущего документа.
+                    </p>
+                    <div class="modal-actions">
+                        <a class="button-secondary" href="{{ url_for('knowledge') }}#documents">Назад</a>
+                        <button type="button" class="button-primary" data-consent-accept>Продолжить</button>
+                    </div>
+                </div>
+            </div>
+
+            <form class="fill-form" action="{{ url_for('recalculation_export_docx') }}" method="post" data-pdf-form>
+                <div class="fill-grid">
+                    <label>
+                        <span>ФИО</span>
+                        <input type="text" name="applicant" value="{{ default_form.applicant }}">
+                    </label>
+                    <label>
+                        <span>Кому</span>
+                        <input type="text" name="recipient" value="{{ default_form.recipient }}">
+                    </label>
+                    <label class="span-two">
+                        <span>Адрес</span>
+                        <input type="text" name="address" value="{{ default_form.address }}">
+                    </label>
+                    <label>
+                        <span>Период: с</span>
+                        <input type="date" name="period_from" value="{{ default_form.period_from }}">
+                    </label>
+                    <label>
+                        <span>по</span>
+                        <input type="date" name="period_to" value="{{ default_form.period_to }}">
+                    </label>
+                    <label class="span-two">
+                        <span>Причина</span>
+                        <textarea name="reason" rows="5">{{ default_form.reason }}</textarea>
+                    </label>
+                    <label class="span-two">
+                        <span>Основание для перерасчёта</span>
+                        <textarea name="basis" rows="5">{{ default_form.basis }}</textarea>
+                    </label>
+                </div>
+
+                <div class="export-actions">
+                    <button type="submit" class="button-primary">Выгрузить в DOCX</button>
+                    <button type="button" class="button-secondary" data-preview-pdf data-preview-url="{{ url_for('recalculation_print') }}">Выгрузить в PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

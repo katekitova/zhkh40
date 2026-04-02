@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner">
+        <p class="eyebrow">Раздел сайта</p>
+        <h1>{{ page.title }}</h1>
+        <p class="hero-lead">{{ page.lead }}</p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card">
+            <div class="section-heading">
+                <h2>Что можно разместить в этом разделе</h2>
+            </div>
+            <div class="info-list">
+                {% for point in page.points %}
+                    <article class="info-item">
+                        <span class="info-badge">0{{ loop.index }}</span>
+                        <p>{{ point }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

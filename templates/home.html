@@ -1,0 +1,93 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="hero hero-landing">
+    <div class="container landing-wrap">
+        <p class="eyebrow center-eyebrow hero-tagline">{{ site.tagline }}</p>
+        <h1 class="landing-title">{{ site.name }}</h1>
+        <p class="hero-lead landing-lead">
+            Найди ответ по вопросам ЖКХ, тарифам, услугам и обращениям в г. {{ site.city }}.
+        </p>
+
+        <form class="landing-search" action="{{ url_for('chat') }}" method="get">
+            <label class="search-field landing-search-field">
+                <span class="search-icon" aria-hidden="true"></span>
+                <input type="text" name="q" placeholder="Опишите свою проблему">
+            </label>
+            <button type="submit" class="button-primary">Получить ответ</button>
+        </form>
+
+        <div class="popular-box">
+            <div class="section-heading compact-heading">
+                <h2>Популярные запросы</h2>
+                <a href="{{ url_for('chat') }}">Перейти в чат</a>
+            </div>
+            <div class="chips">
+                {% for query in popular_queries %}
+                    <a class="chip" href="{{ url_for('chat', q=query) }}">{{ query }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="services-grid">
+            {% for item in service_cards %}
+                <a class="service-card" href="{{ item.href }}">
+                    <span class="service-icon">{{ item.icon }}</span>
+                    <span class="service-copy">
+                        <strong>{{ item.title }}</strong>
+                        <small>{{ item.description }}</small>
+                    </span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="container">
+        <div class="section-card">
+            <div class="section-heading">
+                <h2>Важная информация</h2>
+                <a href="{{ url_for('knowledge') }}#documents">Открыть документы</a>
+            </div>
+            <div class="alert-list">
+                <article class="alert-card alert-featured">
+                    <p class="meta">{{ important_items[0].date }}</p>
+                    <h3>{{ important_items[0].title }}</h3>
+                    <p>{{ important_items[0].description }}</p>
+                    <a href="{{ important_items[0].href }}">{{ important_items[0].label }}</a>
+                </article>
+                <article class="alert-card alert-compact">
+                    <div>
+                        <p class="meta">{{ important_items[1].date }}</p>
+                        <h3>{{ important_items[1].title }}</h3>
+                        <p>{{ important_items[1].description }}</p>
+                    </div>
+                    <a href="{{ important_items[1].href }}">{{ important_items[1].label }}</a>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card tone-soft">
+            <div class="section-heading">
+                <h2>Последние материалы</h2>
+                <a href="{{ url_for('knowledge') }}">Вся база знаний</a>
+            </div>
+            <div class="feature-grid three-up">
+                {% for item in news_items %}
+                    <article class="info-card slim-card">
+                        <p class="meta">{{ item.date }}</p>
+                        <h3>{{ item.title }}</h3>
+                        <p>{{ item.description }}</p>
+                        <a href="{{ item.href }}">Подробнее</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
