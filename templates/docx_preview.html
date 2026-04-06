@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block content %}
 <section class="subpage-hero">
@@ -6,29 +6,70 @@
         <p class="eyebrow">Документ</p>
         <h1>{{ doc_title }}</h1>
         <p class="hero-lead narrow-lead">
-            Это исходный файл документа. Его можно открыть как обычный `DOCX` в Word или скачать на устройство.
+            Содержимое документа показано прямо на сайте в удобном формате. При необходимости можно открыть исходный файл в Word или скачать его без изменений.
         </p>
     </div>
 </section>
 
 <section class="content-section content-section-last">
-    <div class="container">
-        <div class="section-card">
-            <div class="docx-preview-sheet docx-preview-sheet-simple">
+    <div class="container docx-preview-layout">
+        <aside class="docx-preview-sidebar">
+            <div class="docx-preview-panel">
                 <p class="docx-file-type">Формат файла: DOCX</p>
-                <h2>{{ doc_filename }}</h2>
-                <p>
-                    Если Word установлен на устройстве, используйте кнопку «Открыть в Word».
-                    Если браузер предложит скачать файл, это тоже нормально: документ останется в исходном виде.
-                </p>
+                <div class="docx-preview-actions">
+                    <a class="button-secondary" href="{{ url_for('knowledge') }}">Назад к базе знаний</a>
+                    <a class="button-secondary" href="{{ doc_download_url }}" target="_blank" rel="noreferrer">Открыть документ</a>
+                    <a class="button-secondary" href="ms-word:ofe|u|{{ doc_open_url }}">Открыть в Word</a>
+                    <a class="button-primary" href="{{ doc_download_url }}" download="{{ doc_filename }}">Скачать DOCX</a>
+                </div>
+            </div>
+        </aside>
+
+        <div class="docx-preview-stage">
+            <div class="docx-preview-header-card">
+                <div>
+                    <p class="docx-preview-kicker">Предпросмотр на сайте</p>
+                    <h2>{{ doc_title }}</h2>
+                    {% if doc_header_meta %}
+                        <p class="docx-preview-header-meta">{{ doc_header_meta }}</p>
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="docx-preview-actions">
-                <a class="button-secondary" href="{{ url_for('knowledge') }}">Назад к базе знаний</a>
-                <a class="button-secondary" href="{{ doc_download_url }}" target="_blank" rel="noreferrer">Открыть документ</a>
-                <a class="button-secondary" href="ms-word:ofe|u|{{ doc_open_url }}">Открыть в Word</a>
-                <a class="button-primary" href="{{ doc_download_url }}" download="{{ doc_filename }}">Скачать DOCX</a>
-            </div>
+            <article class="docx-preview-paper">
+                {% for block in doc_content %}
+                    {% if block.type == "paragraph" %}
+                        {% if block.style == "title" %}
+                            <h2 class="docx-block-title">{{ block.text }}</h2>
+                        {% elif block.style == "meta" %}
+                            <p class="docx-block-meta">{{ block.text }}</p>
+                        {% elif block.style == "heading" %}
+                            <h3 class="docx-block-heading">{{ block.text }}</h3>
+                        {% elif block.style == "note" %}
+                            <p class="docx-block-note">{{ block.text }}</p>
+                        {% else %}
+                            <p class="docx-block-paragraph">{{ block.text }}</p>
+                        {% endif %}
+                    {% elif block.type == "table" %}
+                        <div class="docx-table-wrap">
+                            <table class="docx-preview-table">
+                                {% for row in block.rows %}
+                                    {% set is_header = loop.first %}
+                                    <tr>
+                                        {% for cell in row %}
+                                            {% if is_header %}
+                                                <th>{{ cell }}</th>
+                                            {% else %}
+                                                <td>{{ cell }}</td>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </article>
         </div>
     </div>
 </section>

@@ -307,7 +307,38 @@ def transform_links(links):
     return transformed
 
 
-def extract_docx_paragraphs(static_path):
+def _extract_docx_text(node):
+    parts = []
+    for child in node.iter():
+        tag = child.tag.rsplit("}", 1)[-1]
+        if tag == "t" and child.text:
+            parts.append(child.text)
+        elif tag == "tab":
+            parts.append("    ")
+        elif tag in {"br", "cr"}:
+            parts.append(" ")
+
+    return "".join(parts).strip()
+
+
+def classify_docx_paragraph(text, is_first=False):
+    compact = " ".join(text.split())
+    normalized = compact.lower()
+
+    if is_first:
+        return "title"
+    if normalized.startswith("актуально на "):
+        return "meta"
+    if compact.startswith("*"):
+        return "note"
+    if compact.endswith(":") and len(compact) <= 90:
+        return "heading"
+    if len(compact) <= 80 and compact.count(" ") <= 7 and not compact.endswith("."):
+        return "heading"
+    return "paragraph"
+
+
+def extract_docx_content(static_path):
     target = Path(app.static_folder, *static_path.split("/"))
     if not target.exists():
         raise FileNotFoundError(static_path)
@@ -316,23 +347,58 @@ def extract_docx_paragraphs(static_path):
         xml_bytes = archive.read("word/document.xml")
 
     root = ET.fromstring(xml_bytes)
-    paragraphs = []
-    for paragraph in root.findall(".//w:p", DOCX_NAMESPACE):
-        parts = []
-        for node in paragraph.iter():
-            tag = node.tag.rsplit("}", 1)[-1]
-            if tag == "t" and node.text:
-                parts.append(node.text)
-            elif tag == "tab":
-                parts.append("    ")
-            elif tag in {"br", "cr"}:
-                parts.append(" ")
+    body = root.find("w:body", DOCX_NAMESPACE)
+    if body is None:
+        return []
 
-        line = "".join(parts).strip()
-        if line:
-            paragraphs.append(line)
+    content = []
+    paragraph_index = 0
 
-    return paragraphs
+    for child in list(body):
+        tag = child.tag.rsplit("}", 1)[-1]
+
+        if tag == "p":
+            text = _extract_docx_text(child)
+            if not text:
+                continue
+
+            content.append(
+                {
+                    "type": "paragraph",
+                    "style": classify_docx_paragraph(text, is_first=paragraph_index == 0),
+                    "text": text,
+                }
+            )
+            paragraph_index += 1
+            continue
+
+        if tag != "tbl":
+            continue
+
+        rows = []
+        for row in child.findall("w:tr", DOCX_NAMESPACE):
+            cells = []
+            for cell in row.findall("w:tc", DOCX_NAMESPACE):
+                fragments = []
+                for paragraph in cell.findall("w:p", DOCX_NAMESPACE):
+                    fragment = _extract_docx_text(paragraph)
+                    if fragment:
+                        fragments.append(fragment)
+                cell_text = "\n".join(fragments).strip()
+                if cell_text:
+                    cells.append(cell_text)
+
+            if cells:
+                rows.append(cells)
+
+        if rows:
+            content.append({"type": "table", "rows": rows})
+
+    return content
+
+
+def extract_docx_paragraphs(static_path):
+    return [block["text"] for block in extract_docx_content(static_path) if block.get("type") == "paragraph"]
 
 
 def prepare_chat_scenarios():
@@ -761,6 +827,18 @@ def docx_preview():
         abort(404)
 
     document_meta = docx_registry[static_path]
+    doc_content = extract_docx_content(static_path)
+    paragraph_count = sum(1 for block in doc_content if block.get("type") == "paragraph")
+    table_count = sum(1 for block in doc_content if block.get("type") == "table")
+    header_meta = ""
+    filtered_content = list(doc_content)
+
+    if filtered_content and filtered_content[0].get("type") == "paragraph" and filtered_content[0].get("style") == "title":
+        filtered_content = filtered_content[1:]
+
+    if filtered_content and filtered_content[0].get("type") == "paragraph" and filtered_content[0].get("style") == "meta":
+        header_meta = filtered_content[0].get("text", "")
+        filtered_content = filtered_content[1:]
 
     return render_page(
         "docx_preview.html",
@@ -770,6 +848,10 @@ def docx_preview():
         doc_download_url=url_for("static", filename=static_path),
         doc_open_url=url_for("static", filename=static_path, _external=True),
         doc_filename=document_meta["filename"],
+        doc_content=filtered_content,
+        doc_paragraph_count=paragraph_count,
+        doc_table_count=table_count,
+        doc_header_meta=header_meta,
     )
 
 
