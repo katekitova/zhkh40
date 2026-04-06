@@ -49,7 +49,7 @@
         const scenarios = JSON.parse(chatRoot.dataset.scenarios || "[]");
         const defaultTitle = chatRoot.dataset.defaultTitle || "Напишите вопрос своими словами";
         const defaultSummary = chatRoot.dataset.defaultSummary || "Можно выбрать тему кнопками выше или просто описать проблему.";
-        const storageKey = "jkh40-chat-state-v1";
+        const storageKey = "jkh40-chat-state-v2";
         const explicitScenario = (chatRoot.dataset.selectedScenario || "").trim();
         const titleNode = chatRoot.querySelector("[data-scenario-title]");
         const summaryNode = chatRoot.querySelector("[data-scenario-summary]");
@@ -67,20 +67,56 @@
         let requestInFlight = false;
         let pendingScenarioMatch = null;
 
+        function currentViewSlug() {
+            return currentScenario ? currentScenario.slug : "";
+        }
+
+        function getCurrentNodeKey() {
+            if (!currentScenario || !currentNode || !currentScenario.nodes) {
+                return "";
+            }
+
+            return Object.keys(currentScenario.nodes).find(function (key) {
+                return currentScenario.nodes[key] === currentNode;
+            }) || "";
+        }
+
+        function readChatStorage() {
+            try {
+                const raw = window.sessionStorage.getItem(storageKey);
+                if (!raw) {
+                    return { views: {}, activeSlug: "" };
+                }
+
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== "object") {
+                    return { views: {}, activeSlug: "" };
+                }
+
+                parsed.views = parsed.views && typeof parsed.views === "object" ? parsed.views : {};
+                parsed.activeSlug = typeof parsed.activeSlug === "string" ? parsed.activeSlug : "";
+                return parsed;
+            } catch (error) {
+                return { views: {}, activeSlug: "" };
+            }
+        }
+
         function saveChatState() {
             try {
-                window.sessionStorage.setItem(storageKey, JSON.stringify({
+                const storage = readChatStorage();
+                const viewSlug = currentViewSlug();
+                storage.views[viewSlug] = {
                     html: messagesNode.innerHTML,
-                    currentScenarioSlug: currentScenario ? currentScenario.slug : "",
-                    currentNodeKey: currentNode ? Object.keys(currentScenario && currentScenario.nodes ? currentScenario.nodes : {}).find(function (key) {
-                        return currentScenario.nodes[key] === currentNode;
-                    }) || "" : "",
+                    currentScenarioSlug: viewSlug,
+                    currentNodeKey: getCurrentNodeKey(),
                     waitingForInput: waitingForInput,
                     pendingScenarioMatch: pendingScenarioMatch,
                     title: titleNode.textContent,
                     summary: summaryNode.textContent,
                     placeholder: input.placeholder
-                }));
+                };
+                storage.activeSlug = viewSlug;
+                window.sessionStorage.setItem(storageKey, JSON.stringify(storage));
             } catch (error) {
             }
         }
@@ -92,13 +128,10 @@
             });
         }
 
-        function restoreChatState() {
+        function restoreChatState(viewSlug) {
             try {
-                const raw = window.sessionStorage.getItem(storageKey);
-                if (!raw) {
-                    return false;
-                }
-                const state = JSON.parse(raw);
+                const storage = readChatStorage();
+                const state = storage.views[(viewSlug || "").trim()];
                 if (!state || !state.html) {
                     return false;
                 }
@@ -113,19 +146,15 @@
                 waitingForInput = Boolean(state.waitingForInput);
                 pendingScenarioMatch = state.pendingScenarioMatch || null;
 
-                if (explicitScenario) {
-                    titleNode.textContent = state.title || defaultTitle;
-                    summaryNode.textContent = state.summary || defaultSummary;
-                    tabs.forEach(function (tab) {
-                        tab.classList.toggle("is-active", currentScenario && tab.dataset.scenarioSlug === currentScenario.slug);
-                    });
-                } else {
-                    titleNode.textContent = defaultTitle;
-                    summaryNode.textContent = defaultSummary;
-                    tabs.forEach(function (tab) {
-                        tab.classList.remove("is-active");
-                    });
-                }
+                titleNode.textContent = state.title || defaultTitle;
+                summaryNode.textContent = state.summary || defaultSummary;
+                tabs.forEach(function (tab) {
+                    const tabSlug = (tab.dataset.scenarioSlug || "").trim();
+                    tab.classList.toggle("is-active", tabSlug === (currentScenario ? currentScenario.slug : ""));
+                    if (!currentScenario && tabSlug === "") {
+                        tab.classList.add("is-active");
+                    }
+                });
 
                 setInputState(waitingForInput, state.placeholder || "Напишите проблему обычными словами");
                 scrollChatToEnd();
@@ -272,7 +301,7 @@
                 titleNode.textContent = defaultTitle;
                 summaryNode.textContent = defaultSummary;
                 tabs.forEach(function (tab) {
-                    tab.classList.remove("is-active");
+                    tab.classList.toggle("is-active", tab.dataset.scenarioSlug === "");
                 });
                 saveChatState();
                 return;
@@ -363,9 +392,21 @@
         }
 
         function chooseScenario(slug) {
+            const normalizedSlug = (slug || "").trim();
+            saveChatState();
+
+            if (restoreChatState(normalizedSlug)) {
+                return;
+            }
+
+            if (!normalizedSlug) {
+                startNeutralChat(true);
+                return;
+            }
+
             currentScenario = scenarios.find(function (item) {
-                return item.slug === slug;
-            }) || scenarios[0];
+                return item.slug === normalizedSlug;
+            }) || null;
 
             if (!currentScenario) {
                 return;
@@ -408,14 +449,14 @@
                         continueMatchedScenario();
                     }
                 },
-                {
-                    label: "Нет, не совсем",
-                    onClick: function () {
-                        pendingScenarioMatch = null;
-                        appendBubble("assistant", "Хорошо. Тогда напишите вопрос чуть иначе или выберите нужный сценарий кнопками выше.");
-                        saveChatState();
+                    {
+                        label: "Нет, не совсем",
+                        onClick: function () {
+                            pendingScenarioMatch = null;
+                            appendBubble("assistant", "Хорошо. Тогда напишите вопрос чуть иначе или выберите нужную тему кнопками выше.");
+                            saveChatState();
+                        }
                     }
-                }
             ]);
         }
 
@@ -486,12 +527,12 @@
             submitFreeText(value, false);
         });
 
-        if (!restoreChatState()) {
-            if (explicitScenario) {
+        if (explicitScenario) {
+            if (!restoreChatState(explicitScenario)) {
                 chooseScenario(explicitScenario);
-            } else {
-                startNeutralChat(true);
             }
+        } else if (!restoreChatState("")) {
+            startNeutralChat(true);
         }
 
         if (initialQuery && !initialQueryHandled) {

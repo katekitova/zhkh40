@@ -78,6 +78,31 @@ button {
     margin: 0 auto;
 }
 
+.flash-stack {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.flash-message {
+    padding: 14px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(35, 57, 117, 0.14);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 10px 24px rgba(31, 56, 128, 0.08);
+}
+
+.flash-message.success {
+    border-color: rgba(45, 156, 109, 0.22);
+    background: rgba(236, 251, 243, 0.96);
+}
+
+.flash-message.warning,
+.flash-message.error {
+    border-color: rgba(209, 96, 63, 0.22);
+    background: rgba(255, 244, 240, 0.96);
+}
+
 .site-header {
     position: fixed;
     top: 0;
@@ -403,8 +428,18 @@ textarea::placeholder {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.feature-grid.two-up {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .feature-grid.four-up {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.about-top-grid {
+    max-width: 980px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .journey-grid {
@@ -990,6 +1025,7 @@ textarea::placeholder {
     .document-layout,
     .feature-grid.four-up,
     .feature-grid.three-up,
+    .feature-grid.two-up,
     .highlight-grid.compact-grid,
     .checklist-grid,
     .source-list,
@@ -1029,6 +1065,7 @@ textarea::placeholder {
     .related-links,
     .feature-grid.four-up,
     .feature-grid.three-up,
+    .feature-grid.two-up,
     .highlight-grid.compact-grid,
     .faq-layout,
     .calculator-layout,
@@ -1172,10 +1209,24 @@ textarea::placeholder {
     display: flex;
     align-items: center;
     gap: 14px;
+    position: relative;
     border-radius: 22px;
     border: 1px solid var(--border);
     background: var(--surface-strong);
     box-shadow: var(--shadow);
+}
+
+.service-card-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(37, 80, 222, 0.08);
+    color: var(--primary-deep);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
 }
 
 .service-icon {
@@ -1665,6 +1716,7 @@ body {
 
     .feature-grid.three-up,
     .feature-grid.four-up,
+    .feature-grid.two-up,
     .source-list,
     .services-grid,
     .calculator-layout,
@@ -2115,8 +2167,118 @@ body {
     max-width: 34ch;
 }
 
+.contact-card .contact-mail + p {
+    color: #5f7097;
+}
+
 .contact-mail {
     margin-top: 2px;
+}
+
+.admin-narrow {
+    max-width: 560px;
+}
+
+.admin-auth-card,
+.admin-doc-card,
+.admin-doc-group {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.admin-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.admin-note,
+.admin-warning {
+    margin: 8px 0 0;
+    color: var(--muted);
+}
+
+.admin-warning {
+    color: #9d5a2d;
+}
+
+.admin-form {
+    display: grid;
+    gap: 16px;
+}
+
+.admin-settings-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
+.admin-settings-form .span-two {
+    grid-column: 1 / -1;
+}
+
+.admin-form label {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-form label span {
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.admin-form input,
+.admin-form textarea {
+    width: 100%;
+    min-height: 52px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(35, 57, 117, 0.18);
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--text);
+    outline: 0;
+}
+
+.admin-form textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.admin-submit-row {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.admin-doc-groups {
+    display: grid;
+    gap: 26px;
+    margin-top: 22px;
+}
+
+.admin-doc-group {
+    border: 1px solid rgba(35, 57, 117, 0.14);
+    border-radius: 24px;
+    padding: 20px;
+}
+
+.admin-doc-list {
+    display: grid;
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.admin-doc-card {
+    border: 1px solid rgba(35, 57, 117, 0.12);
+    border-radius: 20px;
+    padding: 18px;
+}
+
+.admin-file-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--muted);
 }
 
 .docx-preview-sheet {
@@ -2126,6 +2288,30 @@ body {
     background: rgba(255, 255, 255, 0.92);
     display: grid;
     gap: 14px;
+}
+
+.docx-preview-sheet-simple {
+    text-align: center;
+    justify-items: center;
+    gap: 12px;
+}
+
+.docx-file-type {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(37, 80, 222, 0.08);
+    color: var(--primary-deep);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.docx-preview-sheet-simple h2 {
+    margin: 0;
+    font-size: clamp(1.4rem, 2vw, 1.9rem);
 }
 
 .docx-preview-sheet p {

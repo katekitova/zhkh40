@@ -3,29 +3,27 @@
 {% block content %}
 <section class="subpage-hero">
     <div class="container subpage-hero-inner align-left">
-        <p class="eyebrow">О платформе</p>
+        <p class="eyebrow">О сервисе</p>
         <h1>О проекте</h1>
         <p class="hero-lead narrow-lead">
-            Этот сайт собран как практический помощник по ЖКХ: главная ведёт в чат, база знаний хранит тарифы,
-            жалобы и материалы по смене УК, а калькулятор помогает быстро прикинуть сумму.
+            {{ about_intro }}
         </p>
     </div>
 </section>
 
 <section class="content-section">
     <div class="container">
-        <div class="feature-grid four-up">
-            {% for block in about_blocks %}
+        <div class="feature-grid two-up about-top-grid">
+            {% for block in about_blocks[:1] %}
                 <article class="section-card info-card lifted-card">
                     <h2>{{ block.title }}</h2>
                     <p>{{ block.description }}</p>
                 </article>
             {% endfor %}
-            <article class="section-card info-card lifted-card contact-card">
+            <article class="section-card info-card lifted-card">
                 <h2>{{ contact_block.title }}</h2>
                 <p>{{ contact_block.description }}</p>
                 <a class="contact-mail" href="mailto:{{ contact_block.email }}">{{ contact_block.email }}</a>
-                <p>{{ contact_block.note }}</p>
             </article>
         </div>
     </div>
