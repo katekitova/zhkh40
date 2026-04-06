@@ -556,15 +556,6 @@
         });
     }
 
-    const previewPdfButton = document.querySelector("[data-preview-pdf]");
-    const pdfForm = document.querySelector("[data-pdf-form]");
-    if (previewPdfButton && pdfForm) {
-        previewPdfButton.addEventListener("click", function () {
-            const data = new URLSearchParams(new FormData(pdfForm));
-            window.open(previewPdfButton.dataset.previewUrl + "?" + data.toString(), "_blank");
-        });
-    }
-
     function splitByThresholds(amount, thresholds) {
         const first = Math.min(amount, thresholds[0]);
         const second = Math.min(Math.max(amount - thresholds[0], 0), thresholds[1] - thresholds[0]);

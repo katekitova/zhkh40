@@ -46,6 +46,7 @@ DEFAULT_ABOUT_INTRO = (
     "документы, маршруты действий и перейти к нужному разделу без долгого поиска."
 )
 DEFAULT_FOOTER_DISCLAIMER = "Информация носит исключительно справочный характер."
+PDF_FONT_CACHE = None
 
 WORD_RE = re.compile(r"[а-яёa-z0-9]+", re.IGNORECASE)
 RUSSIAN_SUFFIXES = (
@@ -768,6 +769,158 @@ def build_docx(paragraphs):
     return buffer
 
 
+def get_pdf_fonts():
+    try:
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+    except ImportError as error:
+        raise RuntimeError("Для выгрузки PDF нужно установить библиотеку reportlab.") from error
+
+    global PDF_FONT_CACHE
+    if PDF_FONT_CACHE:
+        return PDF_FONT_CACHE
+
+    regular_font = "Helvetica"
+    bold_font = "Helvetica-Bold"
+
+    regular_candidates = [
+        Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
+        Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
+    ]
+    bold_candidates = [
+        Path("/System/Library/Fonts/Supplemental/Arial Bold.ttf"),
+        Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+        Path("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
+    ]
+
+    for candidate in regular_candidates:
+        if not candidate.exists():
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont("JKH40Regular", str(candidate)))
+            regular_font = "JKH40Regular"
+            break
+        except Exception:
+            continue
+
+    for candidate in bold_candidates:
+        if not candidate.exists():
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont("JKH40Bold", str(candidate)))
+            bold_font = "JKH40Bold"
+            break
+        except Exception:
+            continue
+
+    PDF_FONT_CACHE = (regular_font, bold_font)
+    return PDF_FONT_CACHE
+
+
+def build_recalc_pdf(form_data):
+    try:
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import mm
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    except ImportError as error:
+        raise RuntimeError("Для выгрузки PDF нужно установить библиотеку reportlab.") from error
+
+    regular_font, bold_font = get_pdf_fonts()
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "RecalcTitle",
+        parent=styles["Normal"],
+        fontName=bold_font,
+        fontSize=15,
+        leading=19,
+        alignment=TA_CENTER,
+        spaceAfter=10,
+    )
+    body_style = ParagraphStyle(
+        "RecalcBody",
+        parent=styles["Normal"],
+        fontName=regular_font,
+        fontSize=11.4,
+        leading=16.2,
+        spaceAfter=8,
+    )
+    recipient_style = ParagraphStyle(
+        "RecalcRecipient",
+        parent=body_style,
+        alignment=TA_RIGHT,
+    )
+
+    def paragraph(text, style, allow_html=False):
+        prepared = text.replace("\n", "<br/>") if allow_html else escape(text).replace("\n", "<br/>")
+        return Paragraph(prepared, style)
+
+    story = []
+    story.append(
+        paragraph(
+            f"Руководителю<br/>{escape(form_data['recipient'])}<br/>от {escape(form_data['applicant'])}<br/>{escape(form_data['address'])}",
+            recipient_style,
+            allow_html=True,
+        )
+    )
+    story.append(Spacer(1, 10))
+    story.append(paragraph("Заявление", title_style))
+    story.append(
+        paragraph(
+            f"Прошу произвести перерасчёт размера платы за коммунальные услуги за период с {form_data['period_from']} по {form_data['period_to']}.",
+            body_style,
+        )
+    )
+    story.append(paragraph(f"<b>Причина перерасчёта:</b> {escape(form_data['reason'])}", body_style, allow_html=True))
+    story.append(paragraph(f"<b>Основание:</b> {escape(form_data['basis'])}", body_style, allow_html=True))
+    story.append(
+        paragraph(
+            "К заявлению могут быть приложены акты замера, фотофиксация, переписка с УК, номер обращения в аварийно-диспетчерскую службу и иные документы.",
+            body_style,
+        )
+    )
+    story.append(Spacer(1, 16))
+
+    signature_table = Table(
+        [["Дата ____________________", "Подпись ____________________"]],
+        colWidths=[80 * mm, 80 * mm],
+        hAlign="LEFT",
+    )
+    signature_table.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, -1), regular_font),
+                ("FONTSIZE", (0, 0), (-1, -1), 11.2),
+                ("TEXTCOLOR", (0, 0), (-1, -1), "#213154"),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 18),
+            ]
+        )
+    )
+    story.append(signature_table)
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=22 * mm,
+        rightMargin=22 * mm,
+        topMargin=20 * mm,
+        bottomMargin=20 * mm,
+        title="Заявление на перерасчёт по ЖКХ",
+    )
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+
 @app.route("/")
 def home():
     return render_page("home.html", "home", page_title="Главная", popular_queries=HOME_POPULAR_QUERIES, service_cards=HOME_SERVICE_CARDS, important_items=HOME_IMPORTANT_ITEMS, news_items=HOME_NEWS_ITEMS)
@@ -915,6 +1068,17 @@ def recalculation_export_docx():
     form_data = get_recalc_form_data(request.form)
     document = build_docx(build_recalc_paragraphs(form_data))
     return send_file(document, as_attachment=True, download_name="zayavlenie-na-pereraschet-jkh.docx", mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+@app.post("/documents/recalculation/export-pdf")
+def recalculation_export_pdf():
+    form_data = get_recalc_form_data(request.form)
+    try:
+        document = build_recalc_pdf(form_data)
+    except RuntimeError as error:
+        flash(str(error), "error")
+        return redirect(url_for("recalculation_fill"))
+    return send_file(document, as_attachment=True, download_name="zayavlenie-na-pereraschet-jkh.pdf", mimetype="application/pdf")
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
