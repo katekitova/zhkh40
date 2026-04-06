@@ -2293,19 +2293,75 @@ body {
     color: var(--muted);
 }
 
-.docx-preview-sheet {
-    padding: 28px;
-    border-radius: 24px;
-    border: 1px solid rgba(35, 57, 117, 0.12);
-    background: rgba(255, 255, 255, 0.92);
+.docx-preview-layout {
     display: grid;
-    gap: 14px;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
 }
 
-.docx-preview-sheet-simple {
-    text-align: center;
-    justify-items: center;
+.docx-preview-sidebar {
+    position: sticky;
+    top: 106px;
+}
+
+.docx-preview-panel,
+.docx-preview-header-card,
+.docx-preview-paper {
+    border: 1px solid rgba(35, 57, 117, 0.12);
+    border-radius: 28px;
+    box-shadow: var(--shadow);
+}
+
+.docx-preview-panel,
+.docx-preview-header-card {
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.docx-preview-stage {
+    display: grid;
+    gap: 18px;
+}
+
+.docx-preview-panel-compact {
+    display: grid;
+    gap: 24px;
+}
+
+.docx-preview-header-card {
+    display: grid;
     gap: 12px;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(242, 247, 255, 0.95)),
+        radial-gradient(circle at top right, rgba(37, 80, 222, 0.08), transparent 34%);
+}
+
+.docx-preview-kicker {
+    margin: 0 0 10px;
+    color: var(--primary-deep);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+.docx-preview-header-card h2,
+.docx-preview-panel h2 {
+    margin: 0;
+}
+
+.docx-preview-header-meta {
+    margin-top: 12px;
+    color: #61739b;
+    font-size: 0.98rem;
+    line-height: 1.5;
+}
+
+.docx-preview-header-card p {
+    margin: 0;
+    color: #516488;
+    line-height: 1.7;
 }
 
 .docx-file-type {
@@ -2321,24 +2377,120 @@ body {
     font-weight: 700;
 }
 
-.docx-preview-sheet-simple h2 {
-    margin: 0;
-    font-size: clamp(1.4rem, 2vw, 1.9rem);
+.docx-preview-paper {
+    width: min(100%, 920px);
+    margin: 0 auto;
+    padding: 40px 46px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(251, 252, 255, 0.98)),
+        repeating-linear-gradient(
+            180deg,
+            transparent,
+            transparent 31px,
+            rgba(33, 63, 146, 0.05) 31px,
+            rgba(33, 63, 146, 0.05) 32px
+        );
 }
 
-.docx-preview-sheet p {
+.docx-block-title,
+.docx-block-heading,
+.docx-block-meta,
+.docx-block-paragraph,
+.docx-block-note {
     margin: 0;
-    color: #405178;
-    line-height: 1.7;
-    white-space: pre-wrap;
+}
+
+.docx-block-title {
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: clamp(1.8rem, 2.5vw, 2.4rem);
+    color: #15368f;
+    line-height: 1.12;
+}
+
+.docx-block-meta {
+    margin-bottom: 24px;
+    text-align: center;
+    color: #61739b;
+    font-size: 0.98rem;
+}
+
+.docx-block-heading {
+    margin-top: 26px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    color: #1b3d9a;
+}
+
+.docx-block-paragraph,
+.docx-block-note {
+    font-size: 1.03rem;
+    line-height: 1.9;
+    color: #213051;
+}
+
+.docx-block-paragraph + .docx-block-paragraph,
+.docx-block-note + .docx-block-note {
+    margin-top: 14px;
+}
+
+.docx-block-note {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-left: 4px solid rgba(37, 80, 222, 0.28);
+    background: rgba(244, 247, 255, 0.8);
+    color: #4f6289;
+    font-size: 0.98rem;
+    line-height: 1.75;
+}
+
+.docx-table-wrap {
+    margin: 22px 0;
+    overflow-x: auto;
+    border-radius: 22px;
+    border: 1px solid rgba(35, 57, 117, 0.12);
+    background: rgba(248, 250, 255, 0.9);
+}
+
+.docx-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 520px;
+}
+
+.docx-preview-table th,
+.docx-preview-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(35, 57, 117, 0.1);
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.6;
+}
+
+.docx-preview-table th {
+    background: rgba(231, 238, 255, 0.92);
+    color: #15368f;
+    font-weight: 700;
+}
+
+.docx-preview-table td {
+    color: #223154;
+    white-space: pre-line;
+}
+
+.docx-preview-table tr:last-child td {
+    border-bottom: 0;
 }
 
 .docx-preview-actions {
-    margin-top: 22px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    display: grid;
     gap: 12px;
+    margin-top: 2px;
+}
+
+.docx-preview-actions .button-primary,
+.docx-preview-actions .button-secondary {
+    width: 100%;
 }
 
 @media (max-width: 980px) {
@@ -2368,18 +2520,33 @@ body {
         font-size: 0.76rem;
     }
 
-    .docx-preview-sheet {
-        padding: 20px;
-        gap: 12px;
+    .docx-preview-layout {
+        grid-template-columns: 1fr;
     }
 
-    .docx-preview-actions {
-        flex-direction: column;
+    .docx-preview-sidebar {
+        position: static;
     }
 
-    .docx-preview-actions .button-primary,
-    .docx-preview-actions .button-secondary {
-        width: 100%;
+    .docx-preview-panel,
+    .docx-preview-header-card,
+    .docx-preview-paper {
+        border-radius: 22px;
+    }
+
+    .docx-preview-paper {
+        padding: 24px 18px;
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    .docx-block-title {
+        font-size: 1.55rem;
+    }
+
+    .docx-block-paragraph,
+    .docx-block-note {
+        font-size: 0.98rem;
+        line-height: 1.75;
     }
 
     .popular-box {
