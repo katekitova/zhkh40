@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Служебный раздел</p>
+        <h1>Вход в админку</h1>
+        <p class="hero-lead narrow-lead">
+            Здесь можно обновлять тексты сайта и заменять документы без ручной правки файлов проекта.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container admin-narrow">
+        <div class="section-card admin-auth-card">
+            <form class="admin-form" method="post" action="{{ url_for('admin_login') }}">
+                <label>
+                    <span>Пароль</span>
+                    <input type="password" name="password" placeholder="Введите пароль администратора" required>
+                </label>
+                <button type="submit" class="button-primary">Войти</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

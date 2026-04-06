@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Служебный раздел</p>
+        <h1>Админка</h1>
+        <p class="hero-lead narrow-lead">
+            Через этот раздел можно менять основные тексты сайта и заменять файлы документов, которые видят пользователи.
+        </p>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="container">
+        <div class="section-card admin-topbar">
+            <div>
+                <h2>Управление сайтом</h2>
+                <p class="admin-note">Изменения сохраняются сразу в проекте и становятся доступны на страницах сайта.</p>
+                {% if admin_password_is_default %}
+                    <p class="admin-warning">Сейчас используется стандартный пароль `admin`. Лучше заменить его через переменную окружения `JKH40_ADMIN_PASSWORD`.</p>
+                {% endif %}
+            </div>
+            <form method="post" action="{{ url_for('admin_logout') }}">
+                <button type="submit" class="button-secondary">Выйти</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="container">
+        <div class="section-card">
+            <div class="section-heading">
+                <h2>Основные тексты</h2>
+            </div>
+            <form class="admin-form admin-settings-form" method="post" action="{{ url_for('admin_update_settings') }}">
+                <label>
+                    <span>Подпись сайта в шапке и на главной</span>
+                    <input type="text" name="site_tagline" value="{{ admin_content.site.tagline }}">
+                </label>
+                <label class="span-two">
+                    <span>Вступительный текст на странице «О проекте»</span>
+                    <textarea name="about_intro">{{ admin_content.about_intro }}</textarea>
+                </label>
+                <label>
+                    <span>Заголовок карточки на странице «О проекте»</span>
+                    <input type="text" name="about_card_title" value="{{ admin_content.about_blocks[0].title }}">
+                </label>
+                <label>
+                    <span>Пояснение в карточке</span>
+                    <textarea name="about_card_description">{{ admin_content.about_blocks[0].description }}</textarea>
+                </label>
+                <label>
+                    <span>Заголовок блока связи</span>
+                    <input type="text" name="contact_title" value="{{ admin_content.contact_block.title }}">
+                </label>
+                <label>
+                    <span>Почта для связи</span>
+                    <input type="email" name="contact_email" value="{{ admin_content.contact_block.email }}">
+                </label>
+                <label class="span-two">
+                    <span>Описание блока связи</span>
+                    <textarea name="contact_description">{{ admin_content.contact_block.description }}</textarea>
+                </label>
+                <label class="span-two">
+                    <span>Подпись в футере</span>
+                    <input type="text" name="footer_disclaimer" value="{{ admin_content.footer_disclaimer }}">
+                </label>
+                <div class="span-two admin-submit-row">
+                    <button type="submit" class="button-primary">Сохранить тексты</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card">
+            <div class="section-heading">
+                <h2>Документы и материалы</h2>
+            </div>
+            <div class="admin-doc-groups">
+                {% for group in admin_document_groups %}
+                    <section class="admin-doc-group">
+                        <h3>{{ group.title }}</h3>
+                        <div class="admin-doc-list">
+                            {% for item in group["items"] %}
+                                <article class="admin-doc-card">
+                                    <form method="post" action="{{ url_for('admin_update_document') }}" enctype="multipart/form-data" class="admin-form">
+                                        <input type="hidden" name="section" value="{{ item.section }}">
+                                        <input type="hidden" name="index" value="{{ item.index }}">
+                                        <label>
+                                            <span>Название</span>
+                                            <input type="text" name="title" value="{{ item.title }}">
+                                        </label>
+                                        <label>
+                                            <span>Краткое описание</span>
+                                            <textarea name="summary">{{ item.summary }}</textarea>
+                                        </label>
+                                        <div class="admin-file-meta">
+                                            <span>Текущий файл: <strong>{{ item.filename }}</strong></span>
+                                            {% if item.file %}
+                                                <a class="text-link" href="{{ item.preview_href }}" target="_blank">Открыть</a>
+                                            {% endif %}
+                                        </div>
+                                        <label>
+                                            <span>Заменить файл</span>
+                                            <input type="file" name="replacement_file">
+                                        </label>
+                                        <button type="submit" class="button-secondary">Сохранить документ</button>
+                                    </form>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

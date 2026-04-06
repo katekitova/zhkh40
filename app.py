@@ -1,3 +1,5 @@
+import json
+import os
 import re
 from copy import deepcopy
 from datetime import date
@@ -8,7 +10,7 @@ from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from flask import Flask, abort, jsonify, render_template, request, send_file, url_for
+from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 
 from site_data import (
     ABOUT_BLOCKS,
@@ -36,7 +38,14 @@ from site_data import (
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("JKH40_SECRET_KEY", "jkh40-local-secret")
 DOCX_NAMESPACE = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+ADMIN_CONTENT_FILE = Path(app.root_path) / "data" / "admin_content.json"
+DEFAULT_ABOUT_INTRO = (
+    "Сайт сделан как практический помощник по вопросам ЖКХ в Калуге: здесь можно найти разъяснения, "
+    "документы, маршруты действий и перейти к нужному разделу без долгого поиска."
+)
+DEFAULT_FOOTER_DISCLAIMER = "Информация носит исключительно справочный характер."
 
 WORD_RE = re.compile(r"[а-яёa-z0-9]+", re.IGNORECASE)
 RUSSIAN_SUFFIXES = (
@@ -360,18 +369,18 @@ def render_page(template_name, active_page, **context):
 
 def admin_required():
     if not session.get("admin_logged_in"):
-        flash("??????? ??????? ? ???????.", "warning")
+        flash("Сначала войдите в админку.", "warning")
         return False
     return True
 
 
 def build_admin_document_groups():
     section_titles = {
-        "tariff_guides": "??????",
-        "management_guides": "????? ?? ? ???",
-        "complaint_guides": "??????",
-        "legal_documents": "???????? ?????????",
-        "document_tools": "????? ? ??????? ?????????",
+        "tariff_guides": "Тарифы",
+        "management_guides": "Смена УК и ТСЖ",
+        "complaint_guides": "Жалобы",
+        "legal_documents": "Правовые документы",
+        "document_tools": "Формы и рабочие документы",
     }
     groups = []
     for section_name, items in get_all_document_collections().items():
@@ -385,7 +394,7 @@ def build_admin_document_groups():
                     "title": item.get("title", ""),
                     "summary": item.get("summary", ""),
                     "file": file_ref,
-                    "filename": Path(file_ref).name if file_ref else "???? ?? ????????",
+                    "filename": Path(file_ref).name if file_ref else "Файл не привязан",
                     "preview_href": resolve_document_href(file_ref) if file_ref else "#",
                 }
             )
@@ -675,9 +684,9 @@ def build_docx(paragraphs):
     rels_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties\" Target=\"docProps/app.xml\"/></Relationships>"""
     app_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
-<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>???40.??</Application></Properties>"""
+<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>ЖКХ40.РФ</Application></Properties>"""
     core_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
-<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><dc:title>Заявление на перерасчёт по ЖКХ</dc:title><dc:creator>???40.??</dc:creator></cp:coreProperties>"""
+<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><dc:title>Заявление на перерасчёт по ЖКХ</dc:title><dc:creator>ЖКХ40.РФ</dc:creator></cp:coreProperties>"""
     styles_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\"><w:name w:val=\"Normal\"/><w:qFormat/><w:rPr><w:rFonts w:ascii=\"Calibri\" w:hAnsi=\"Calibri\" w:eastAsia=\"Calibri\" w:cs=\"Calibri\"/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr></w:style></w:styles>"""
 
@@ -832,17 +841,17 @@ def admin_login():
         password = (request.form.get("password") or "").strip()
         if password == os.environ.get("JKH40_ADMIN_PASSWORD", "admin"):
             session["admin_logged_in"] = True
-            flash("???? ????????.", "success")
+            flash("Вход выполнен.", "success")
             return redirect(url_for("admin_dashboard"))
-        flash("???????? ??????.", "error")
+        flash("Неверный пароль.", "error")
 
-    return render_page("admin_login.html", "about", page_title="???? ? ???????")
+    return render_page("admin_login.html", "about", page_title="Вход в админку")
 
 
 @app.route("/admin/logout", methods=["POST"])
 def admin_logout():
     session.pop("admin_logged_in", None)
-    flash("?? ????? ?? ???????.", "success")
+    flash("Вы вышли из админки.", "success")
     return redirect(url_for("admin_login"))
 
 
@@ -855,7 +864,7 @@ def admin_dashboard():
     return render_page(
         "admin_dashboard.html",
         "about",
-        page_title="???????",
+        page_title="Админка",
         admin_content=admin_content,
         admin_document_groups=build_admin_document_groups(),
         admin_password_is_default=os.environ.get("JKH40_ADMIN_PASSWORD", "admin") == "admin",
@@ -881,7 +890,7 @@ def admin_update_settings():
         }
     ]
     save_admin_content(admin_content)
-    flash("?????? ?????????.", "success")
+    flash("Тексты обновлены.", "success")
     return redirect(url_for("admin_dashboard"))
 
 
@@ -914,21 +923,21 @@ def admin_update_document():
     target_ref = normalize_doc_reference(item.get("file") or item.get("href"))
     if uploaded and uploaded.filename:
         if not target_ref:
-            flash("? ????? ???????? ??? ???????????? ????? ??? ??????.", "error")
+            flash("У этого элемента нет привязанного файла для замены.", "error")
             return redirect(url_for("admin_dashboard"))
 
         target_path = Path(app.static_folder) / target_ref
         source_ext = Path(uploaded.filename).suffix.lower()
         target_ext = target_path.suffix.lower()
         if source_ext and source_ext != target_ext:
-            flash(f"????? ???? ???? ?? ????: {target_ext}", "error")
+            flash(f"Нужен файл того же типа: {target_ext}", "error")
             return redirect(url_for("admin_dashboard"))
 
         target_path.parent.mkdir(parents=True, exist_ok=True)
         uploaded.save(target_path)
 
     save_admin_content(admin_content)
-    flash("???????? ????????.", "success")
+    flash("Документ обновлён.", "success")
     return redirect(url_for("admin_dashboard"))
 
 
