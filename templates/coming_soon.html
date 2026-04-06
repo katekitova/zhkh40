@@ -1,0 +1,37 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Раздел готовится</p>
+        <h1>Скоро будет доступно</h1>
+        <p class="hero-lead narrow-lead">
+            Этот раздел мы ещё дорабатываем. Пока можно перейти в чат, открыть базу знаний или посмотреть уже готовые материалы по тарифам и обращениям.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card tone-soft">
+            <div class="feature-grid three-up">
+                <article class="info-card slim-card">
+                    <h2>Перейти в чат</h2>
+                    <p>Если нужно понять, с чего начать, просто опишите проблему обычными словами.</p>
+                    <a href="{{ url_for('chat') }}">Открыть чат</a>
+                </article>
+                <article class="info-card slim-card">
+                    <h2>Открыть базу знаний</h2>
+                    <p>Тарифы, жалобы, документы и материалы по смене УК уже доступны на сайте.</p>
+                    <a href="{{ url_for('knowledge') }}">Перейти в базу знаний</a>
+                </article>
+                <article class="info-card slim-card">
+                    <h2>Калькулятор тарифов</h2>
+                    <p>Если вопрос про сумму в квитанции, можно сразу открыть калькулятор и сравнить расчёт.</p>
+                    <a href="{{ url_for('calculator') }}">Открыть калькулятор</a>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1044,6 +1044,18 @@ textarea::placeholder {
 }
 
 @media (max-width: 860px) {
+    .admin-topbar {
+        flex-direction: column;
+    }
+
+    .admin-settings-form {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-settings-form .span-two {
+        grid-column: auto;
+    }
+
     .header-inner {
         padding: 14px 0;
         flex-direction: column;
