@@ -1,5 +1,25 @@
 {% extends "base.html" %}
 
+{% macro render_docx_parts(parts) -%}
+    {%- for part in parts -%}
+        {%- if part.href -%}
+            <a class="docx-inline-link" href="{{ part.href }}"{% if part.href.startswith('http://') or part.href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ part.text }}</a>
+        {%- else -%}
+            {{ part.text | docx_linkify }}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endmacro %}
+
+{% macro render_docx_text(block) -%}
+    {%- if block.link_href -%}
+        <a class="docx-inline-link" href="{{ block.link_href }}"{% if block.link_href.startswith('http://') or block.link_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ block.text }}</a>
+    {%- elif block.parts -%}
+        {{ render_docx_parts(block.parts) }}
+    {%- else -%}
+        {{ block.text | docx_linkify }}
+    {%- endif -%}
+{%- endmacro %}
+
 {% block content %}
 <section class="subpage-hero">
     <div class="container subpage-hero-inner align-left">
@@ -38,15 +58,15 @@
                 {% for block in doc_content %}
                     {% if block.type == "paragraph" %}
                         {% if block.style == "title" %}
-                            <h2 class="docx-block-title">{{ block.text }}</h2>
+                            <h2 class="docx-block-title">{{ render_docx_text(block) }}</h2>
                         {% elif block.style == "meta" %}
-                            <p class="docx-block-meta">{{ block.text }}</p>
+                            <p class="docx-block-meta">{{ render_docx_text(block) }}</p>
                         {% elif block.style == "heading" %}
-                            <h3 class="docx-block-heading">{{ block.text }}</h3>
+                            <h3 class="docx-block-heading">{{ render_docx_text(block) }}</h3>
                         {% elif block.style == "note" %}
-                            <p class="docx-block-note">{{ block.text }}</p>
+                            <p class="docx-block-note">{{ render_docx_text(block) }}</p>
                         {% else %}
-                            <p class="docx-block-paragraph">{{ block.text }}</p>
+                            <p class="docx-block-paragraph">{{ render_docx_text(block) }}</p>
                         {% endif %}
                     {% elif block.type == "table" %}
                         <div class="docx-table-wrap">
@@ -56,9 +76,25 @@
                                     <tr>
                                         {% for cell in row %}
                                             {% if is_header %}
-                                                <th>{{ cell }}</th>
+                                                <th>
+                                                    {% if cell is mapping and cell.parts %}
+                                                        {{ render_docx_parts(cell.parts) }}
+                                                    {% elif cell is mapping %}
+                                                        {{ cell.text | docx_linkify }}
+                                                    {% else %}
+                                                        {{ cell | docx_linkify }}
+                                                    {% endif %}
+                                                </th>
                                             {% else %}
-                                                <td>{{ cell }}</td>
+                                                <td>
+                                                    {% if cell is mapping and cell.parts %}
+                                                        {{ render_docx_parts(cell.parts) }}
+                                                    {% elif cell is mapping %}
+                                                        {{ cell.text | docx_linkify }}
+                                                    {% else %}
+                                                        {{ cell | docx_linkify }}
+                                                    {% endif %}
+                                                </td>
                                             {% endif %}
                                         {% endfor %}
                                     </tr>

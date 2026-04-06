@@ -2434,6 +2434,18 @@ body {
     color: #213051;
 }
 
+.docx-inline-link {
+    color: #1b3d9a;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    font-weight: 700;
+}
+
+.docx-inline-link:hover {
+    color: #15368f;
+}
+
 .docx-block-paragraph + .docx-block-paragraph,
 .docx-block-note + .docx-block-note {
     margin-top: 14px;
