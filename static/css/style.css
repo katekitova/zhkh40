@@ -496,6 +496,11 @@ textarea::placeholder {
     font-weight: 700;
 }
 
+.document-cta .button-primary,
+.document-cta .button-primary:visited {
+    color: #ffffff;
+}
+
 .info-card p,
 .tariff-card p,
 .search-result-card p,

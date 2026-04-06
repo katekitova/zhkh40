@@ -488,12 +488,6 @@ DOCUMENT_TOOLS = [
         "href": "/documents/recalculation/fill",
         "label": "Заполнить форму",
     },
-    {
-        "title": "Библиотека исходных материалов",
-        "summary": "Скачивание присланных тарифных и управленческих документов прямо из сайта.",
-        "href": "/knowledge#documents",
-        "label": "Открыть библиотеку",
-    },
 ]
 
 
