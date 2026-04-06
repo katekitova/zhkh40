@@ -6,7 +6,7 @@
         <p class="eyebrow">Форма документа</p>
         <h1>Форма заполнения</h1>
         <p class="hero-lead narrow-lead">
-            Заполни основные поля, после чего можно скачать DOCX-версию или открыть печатную страницу для PDF.
+            Заполни основные поля, после чего можно скачать DOCX-версию или сразу выгрузить PDF.
         </p>
     </div>
 </section>
@@ -63,7 +63,7 @@
 
                 <div class="export-actions">
                     <button type="submit" class="button-primary">Выгрузить в DOCX</button>
-                    <button type="button" class="button-secondary" data-preview-pdf data-preview-url="{{ url_for('recalculation_print') }}">Выгрузить в PDF</button>
+                    <button type="submit" class="button-secondary" formaction="{{ url_for('recalculation_export_pdf') }}" formmethod="post">Выгрузить в PDF</button>
                 </div>
             </form>
         </div>
