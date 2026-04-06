@@ -6,9 +6,8 @@
             <a href="{{ url_for('static', filename='docs/legal/Пользовательское_соглашение_ЖКХ40.pdf') }}">Пользовательское соглашение</a>
             <a href="{{ url_for('knowledge') }}#legal">Правовые документы</a>
         </div>
-                <p class="footer-disclaimer">
-            Информация носит исключительно справочный характер.
+        <p class="footer-disclaimer">
+            {{ footer_disclaimer }}
         </p>
-        <p>&copy; {{ current_year }} {{ site.name }}. {{ site.version }}</p>
     </div>
 </footer>

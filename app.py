@@ -1,4 +1,4 @@
-﻿import re
+import re
 from copy import deepcopy
 from datetime import date
 from difflib import SequenceMatcher
@@ -90,6 +90,141 @@ RUSSIAN_SUFFIXES = (
     "о",
 )
 
+def admin_default_content():
+    return {
+        "site": {
+            "tagline": SITE.get("tagline", ""),
+        },
+        "about_intro": DEFAULT_ABOUT_INTRO,
+        "contact_block": {
+            "title": CONTACT_BLOCK.get("title", ""),
+            "description": CONTACT_BLOCK.get("description", ""),
+            "email": CONTACT_BLOCK.get("email", ""),
+        },
+        "about_blocks": deepcopy(ABOUT_BLOCKS[:1]),
+        "footer_disclaimer": DEFAULT_FOOTER_DISCLAIMER,
+        "document_meta": {},
+    }
+
+
+def load_admin_content():
+    defaults = admin_default_content()
+    if not ADMIN_CONTENT_FILE.exists():
+        return defaults
+
+    try:
+        saved = json.loads(ADMIN_CONTENT_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return defaults
+
+    if not isinstance(saved, dict):
+        return defaults
+
+    result = deepcopy(defaults)
+    for key in ("site", "contact_block", "document_meta"):
+        if isinstance(saved.get(key), dict):
+            result[key].update(saved[key])
+
+    if isinstance(saved.get("about_intro"), str) and saved["about_intro"].strip():
+        result["about_intro"] = saved["about_intro"].strip()
+
+    if isinstance(saved.get("footer_disclaimer"), str) and saved["footer_disclaimer"].strip():
+        result["footer_disclaimer"] = saved["footer_disclaimer"].strip()
+
+    if isinstance(saved.get("about_blocks"), list) and saved["about_blocks"]:
+        custom_blocks = []
+        for block in saved["about_blocks"]:
+            if isinstance(block, dict):
+                custom_blocks.append(
+                    {
+                        "title": str(block.get("title", "")).strip(),
+                        "description": str(block.get("description", "")).strip(),
+                    }
+                )
+        if custom_blocks:
+            result["about_blocks"] = custom_blocks
+
+    return result
+
+
+def save_admin_content(content):
+    ADMIN_CONTENT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ADMIN_CONTENT_FILE.write_text(json.dumps(content, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def apply_document_overrides(section_name, items):
+    admin_content = load_admin_content()
+    overrides = admin_content.get("document_meta", {})
+    prepared = deepcopy(items)
+
+    for index, item in enumerate(prepared):
+        override = overrides.get(f"{section_name}:{index}", {})
+        if not isinstance(override, dict):
+            continue
+        for field in ("title", "summary", "current_rate", "future_rate", "formula", "label"):
+            if isinstance(override.get(field), str) and override[field].strip():
+                item[field] = override[field].strip()
+
+    return prepared
+
+
+def get_site_content():
+    site = deepcopy(SITE)
+    site.update(load_admin_content().get("site", {}))
+    return site
+
+
+def get_about_intro():
+    return load_admin_content().get("about_intro", DEFAULT_ABOUT_INTRO)
+
+
+def get_contact_block():
+    contact_block = deepcopy(CONTACT_BLOCK)
+    contact_block.update(load_admin_content().get("contact_block", {}))
+    return contact_block
+
+
+def get_about_blocks():
+    custom_blocks = load_admin_content().get("about_blocks")
+    if isinstance(custom_blocks, list) and custom_blocks:
+        return deepcopy(custom_blocks)
+    return deepcopy(ABOUT_BLOCKS[:1])
+
+
+def get_footer_disclaimer():
+    return load_admin_content().get("footer_disclaimer", DEFAULT_FOOTER_DISCLAIMER)
+
+
+def get_tariff_guides():
+    return apply_document_overrides("tariff_guides", TARIFF_GUIDES)
+
+
+def get_management_guides():
+    return apply_document_overrides("management_guides", MANAGEMENT_GUIDES)
+
+
+def get_complaint_guides():
+    return apply_document_overrides("complaint_guides", COMPLAINT_GUIDES)
+
+
+def get_legal_documents():
+    return apply_document_overrides("legal_documents", LEGAL_DOCUMENTS)
+
+
+def get_document_tools():
+    return apply_document_overrides("document_tools", DOCUMENT_TOOLS)
+
+
+def get_all_document_collections():
+    return {
+        "tariff_guides": get_tariff_guides(),
+        "management_guides": get_management_guides(),
+        "complaint_guides": get_complaint_guides(),
+        "legal_documents": get_legal_documents(),
+        "document_tools": get_document_tools(),
+    }
+
+
 
 def build_navigation(active_page):
     return [{"endpoint": endpoint, "label": label, "active": endpoint == active_page} for endpoint, label in NAV_ITEMS]
@@ -113,7 +248,7 @@ def normalize_doc_reference(value):
 
 def collect_docx_registry():
     registry = {}
-    collections = [TARIFF_GUIDES, MANAGEMENT_GUIDES, COMPLAINT_GUIDES, LEGAL_DOCUMENTS, DOCUMENT_TOOLS, CHAT_KNOWLEDGE_BASE]
+    collections = list(get_all_document_collections().values()) + [CHAT_KNOWLEDGE_BASE]
 
     for entries in collections:
         for entry in entries:
@@ -145,12 +280,9 @@ def collect_docx_registry():
     return registry
 
 
-DOCX_REGISTRY = collect_docx_registry()
-
-
 def resolve_document_href(value):
     normalized = normalize_doc_reference(value)
-    if normalized and normalized.lower().endswith(".docx") and normalized in DOCX_REGISTRY:
+    if normalized and normalized.lower().endswith(".docx") and (Path(app.static_folder) / normalized).exists():
         return url_for("docx_preview", file=normalized)
     if normalized:
         return url_for("static", filename=normalized)
@@ -208,18 +340,57 @@ def prepare_chat_scenarios():
 
 @app.context_processor
 def utility_processor():
-    return {"doc_preview_url": resolve_document_href}
+    return {
+        "doc_preview_url": resolve_document_href,
+        "footer_disclaimer": get_footer_disclaimer(),
+        "admin_logged_in": bool(session.get("admin_logged_in")),
+    }
 
 
 def render_page(template_name, active_page, **context):
     return render_template(
         template_name,
-        site=SITE,
+        site=get_site_content(),
         current_year=date.today().year,
         nav_items=build_navigation(active_page),
         active_page=active_page,
         **context,
     )
+
+
+def admin_required():
+    if not session.get("admin_logged_in"):
+        flash("??????? ??????? ? ???????.", "warning")
+        return False
+    return True
+
+
+def build_admin_document_groups():
+    section_titles = {
+        "tariff_guides": "??????",
+        "management_guides": "????? ?? ? ???",
+        "complaint_guides": "??????",
+        "legal_documents": "???????? ?????????",
+        "document_tools": "????? ? ??????? ?????????",
+    }
+    groups = []
+    for section_name, items in get_all_document_collections().items():
+        group_items = []
+        for index, item in enumerate(items):
+            file_ref = normalize_doc_reference(item.get("file") or item.get("href"))
+            group_items.append(
+                {
+                    "section": section_name,
+                    "index": index,
+                    "title": item.get("title", ""),
+                    "summary": item.get("summary", ""),
+                    "file": file_ref,
+                    "filename": Path(file_ref).name if file_ref else "???? ?? ????????",
+                    "preview_href": resolve_document_href(file_ref) if file_ref else "#",
+                }
+            )
+        groups.append({"key": section_name, "title": section_titles.get(section_name, section_name), "items": group_items})
+    return groups
 
 
 def normalize_text(value):
@@ -365,7 +536,7 @@ def collect_search_results(query):
                 }
             )
 
-    for guide in TARIFF_GUIDES:
+    for guide in get_tariff_guides():
         haystack = f"{guide['title']} {guide['summary']} {' '.join(guide['tags'])} {guide['formula']}".lower()
         if query_lower in haystack:
             results.append(
@@ -377,7 +548,7 @@ def collect_search_results(query):
                 }
             )
 
-    for guide in MANAGEMENT_GUIDES:
+    for guide in get_management_guides():
         haystack = f"{guide['title']} {guide['summary']} {guide['badge']}".lower()
         if query_lower in haystack:
             results.append(
@@ -389,7 +560,7 @@ def collect_search_results(query):
                 }
             )
 
-    for guide in COMPLAINT_GUIDES:
+    for guide in get_complaint_guides():
         haystack = f"{guide['title']} {guide['summary']} {guide['badge']}".lower()
         if query_lower in haystack:
             results.append(
@@ -413,7 +584,7 @@ def collect_search_results(query):
                 }
             )
 
-    for tool in DOCUMENT_TOOLS:
+    for tool in get_document_tools():
         haystack = f"{tool['title']} {tool['summary']}".lower()
         if query_lower in haystack:
             results.append(
@@ -425,7 +596,7 @@ def collect_search_results(query):
                 }
             )
 
-    for item in LEGAL_DOCUMENTS:
+    for item in get_legal_documents():
         haystack = f"{item['title']} {item['summary']} {item['type']}".lower()
         if query_lower in haystack:
             results.append(
@@ -504,9 +675,9 @@ def build_docx(paragraphs):
     rels_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties\" Target=\"docProps/app.xml\"/></Relationships>"""
     app_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
-<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>Codex</Application></Properties>"""
+<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>???40.??</Application></Properties>"""
     core_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
-<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><dc:title>Заявление на перерасчёт по ЖКХ</dc:title><dc:creator>Codex</dc:creator></cp:coreProperties>"""
+<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><dc:title>Заявление на перерасчёт по ЖКХ</dc:title><dc:creator>???40.??</dc:creator></cp:coreProperties>"""
     styles_xml = """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\"><w:name w:val=\"Normal\"/><w:qFormat/><w:rPr><w:rFonts w:ascii=\"Calibri\" w:hAnsi=\"Calibri\" w:eastAsia=\"Calibri\" w:cs=\"Calibri\"/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr></w:style></w:styles>"""
 
@@ -567,25 +738,26 @@ def calculator():
     )
 
 
+@app.route("/coming-soon")
+def coming_soon():
+    return render_page("coming_soon.html", "home", page_title="Скоро будет")
+
+
 @app.route("/documents/preview")
 def docx_preview():
     file_ref = request.args.get("file", "").strip()
     static_path = normalize_doc_reference(file_ref)
-    if not static_path or static_path not in DOCX_REGISTRY:
+    docx_registry = collect_docx_registry()
+    if not static_path or static_path not in docx_registry:
         abort(404)
 
-    document_meta = DOCX_REGISTRY[static_path]
-    try:
-        paragraphs = extract_docx_paragraphs(static_path)
-    except Exception:
-        paragraphs = []
+    document_meta = docx_registry[static_path]
 
     return render_page(
         "docx_preview.html",
         "knowledge",
         page_title=document_meta["title"],
         doc_title=document_meta["title"],
-        doc_paragraphs=paragraphs,
         doc_download_url=url_for("static", filename=static_path),
         doc_open_url=url_for("static", filename=static_path, _external=True),
         doc_filename=document_meta["filename"],
@@ -652,6 +824,112 @@ def recalculation_export_docx():
     form_data = get_recalc_form_data(request.form)
     document = build_docx(build_recalc_paragraphs(form_data))
     return send_file(document, as_attachment=True, download_name="zayavlenie-na-pereraschet-jkh.docx", mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        password = (request.form.get("password") or "").strip()
+        if password == os.environ.get("JKH40_ADMIN_PASSWORD", "admin"):
+            session["admin_logged_in"] = True
+            flash("???? ????????.", "success")
+            return redirect(url_for("admin_dashboard"))
+        flash("???????? ??????.", "error")
+
+    return render_page("admin_login.html", "about", page_title="???? ? ???????")
+
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    session.pop("admin_logged_in", None)
+    flash("?? ????? ?? ???????.", "success")
+    return redirect(url_for("admin_login"))
+
+
+@app.route("/admin")
+def admin_dashboard():
+    if not admin_required():
+        return redirect(url_for("admin_login"))
+
+    admin_content = load_admin_content()
+    return render_page(
+        "admin_dashboard.html",
+        "about",
+        page_title="???????",
+        admin_content=admin_content,
+        admin_document_groups=build_admin_document_groups(),
+        admin_password_is_default=os.environ.get("JKH40_ADMIN_PASSWORD", "admin") == "admin",
+    )
+
+
+@app.post("/admin/settings")
+def admin_update_settings():
+    if not admin_required():
+        return redirect(url_for("admin_login"))
+
+    admin_content = load_admin_content()
+    admin_content["site"]["tagline"] = (request.form.get("site_tagline") or SITE.get("tagline", "")).strip()
+    admin_content["about_intro"] = (request.form.get("about_intro") or DEFAULT_ABOUT_INTRO).strip()
+    admin_content["contact_block"]["title"] = (request.form.get("contact_title") or CONTACT_BLOCK.get("title", "")).strip()
+    admin_content["contact_block"]["description"] = (request.form.get("contact_description") or CONTACT_BLOCK.get("description", "")).strip()
+    admin_content["contact_block"]["email"] = (request.form.get("contact_email") or CONTACT_BLOCK.get("email", "")).strip()
+    admin_content["footer_disclaimer"] = (request.form.get("footer_disclaimer") or DEFAULT_FOOTER_DISCLAIMER).strip()
+    admin_content["about_blocks"] = [
+        {
+            "title": (request.form.get("about_card_title") or ABOUT_BLOCKS[0].get("title", "")).strip(),
+            "description": (request.form.get("about_card_description") or ABOUT_BLOCKS[0].get("description", "")).strip(),
+        }
+    ]
+    save_admin_content(admin_content)
+    flash("?????? ?????????.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.post("/admin/document")
+def admin_update_document():
+    if not admin_required():
+        return redirect(url_for("admin_login"))
+
+    section = (request.form.get("section") or "").strip()
+    try:
+        index = int(request.form.get("index", "-1"))
+    except ValueError:
+        abort(400)
+
+    collections = get_all_document_collections()
+    items = collections.get(section)
+    if items is None or index < 0 or index >= len(items):
+        abort(404)
+
+    item = items[index]
+    admin_content = load_admin_content()
+    document_meta = admin_content.setdefault("document_meta", {})
+    key = f"{section}:{index}"
+    document_meta[key] = {
+        "title": (request.form.get("title") or item.get("title", "")).strip(),
+        "summary": (request.form.get("summary") or item.get("summary", "")).strip(),
+    }
+
+    uploaded = request.files.get("replacement_file")
+    target_ref = normalize_doc_reference(item.get("file") or item.get("href"))
+    if uploaded and uploaded.filename:
+        if not target_ref:
+            flash("? ????? ???????? ??? ???????????? ????? ??? ??????.", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        target_path = Path(app.static_folder) / target_ref
+        source_ext = Path(uploaded.filename).suffix.lower()
+        target_ext = target_path.suffix.lower()
+        if source_ext and source_ext != target_ext:
+            flash(f"????? ???? ???? ?? ????: {target_ext}", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        uploaded.save(target_path)
+
+    save_admin_content(admin_content)
+    flash("???????? ????????.", "success")
+    return redirect(url_for("admin_dashboard"))
 
 
 if __name__ == "__main__":

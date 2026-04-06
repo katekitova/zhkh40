@@ -3,7 +3,7 @@
 {% block content %}
 <section class="subpage-hero">
     <div class="container subpage-hero-inner align-left">
-        <p class="eyebrow">Сценарий обращения</p>
+        <p class="eyebrow">Помощь по ЖКХ</p>
         <h1>Чат-помощник по вопросам ЖКХ</h1>
         <p class="hero-lead narrow-lead">
             Можно идти по готовым веткам или просто написать проблему своими словами: тарифы, жалобы,
@@ -24,6 +24,9 @@
             </div>
 
             <div class="scenario-tabs scenario-tabs-wide">
+                <button type="button" class="scenario-tab {% if not selected_scenario %}is-active{% endif %}" data-scenario-tab data-scenario-slug="">
+                    Чат
+                </button>
                 {% for scenario in chat_scenarios %}
                     <button type="button" class="scenario-tab {% if scenario.slug == selected_scenario %}is-active{% endif %}" data-scenario-tab data-scenario-slug="{{ scenario.slug }}">
                         {{ scenario.title }}
