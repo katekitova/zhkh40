@@ -520,6 +520,12 @@ textarea::placeholder {
     line-height: 1.55;
 }
 
+.consent-card p a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .meta {
     margin: 0;
     color: #8090b4;
@@ -2432,6 +2438,8 @@ body {
     font-size: 1.03rem;
     line-height: 1.9;
     color: #213051;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .docx-inline-link {
@@ -2444,6 +2452,20 @@ body {
 
 .docx-inline-link:hover {
     color: #15368f;
+}
+
+.docx-year-select {
+    display: inline-flex;
+    min-width: 118px;
+    margin: 0 4px;
+    padding: 2px 8px;
+    border: 1px solid rgba(35, 57, 117, 0.2);
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1b3d9a;
+    font: inherit;
+    font-size: 0.9em;
+    line-height: 1.2;
 }
 
 .docx-block-paragraph + .docx-block-paragraph,
@@ -2493,6 +2515,8 @@ body {
 .docx-preview-table td {
     color: #223154;
     white-space: pre-line;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .docx-preview-table tr:last-child td {
@@ -2508,6 +2532,18 @@ body {
 .docx-preview-actions .button-primary,
 .docx-preview-actions .button-secondary {
     width: 100%;
+}
+
+@media (max-width: 1120px) {
+    .docx-preview-layout {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .docx-preview-sidebar {
+        position: static;
+        top: auto;
+    }
 }
 
 @media (max-width: 980px) {
