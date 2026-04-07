@@ -37,6 +37,9 @@
             <div class="docx-preview-panel">
                 <p class="docx-file-type">Формат файла: DOCX</p>
                 <div class="docx-preview-actions">
+                    {% if doc_fill_url %}
+                        <a class="button-secondary" href="{{ doc_fill_url }}">{{ doc_fill_label or "Заполнить форму" }}</a>
+                    {% endif %}
                     <a class="button-secondary" href="{{ url_for('knowledge') }}">Назад к базе знаний</a>
                     <a class="button-primary" href="{{ doc_download_url }}" download="{{ doc_filename }}">Скачать DOCX</a>
                 </div>

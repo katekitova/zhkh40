@@ -1,0 +1,132 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Форма документа</p>
+        <h1>Форма заполнения уведомления</h1>
+        <p class="hero-lead narrow-lead">
+            Заполните поля и выгрузите уведомление о расторжении договора с УК в DOCX или PDF.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container">
+        <div class="section-card form-shell">
+            <div class="consent-modal" data-consent-modal>
+                <div class="consent-card">
+                    <h2>Условия использования</h2>
+                    <p>
+                        Нажимая «Продолжить», вы подтверждаете, что ознакомлены с
+                        информационно-справочным характером шаблона, а также с
+                        <a href="{{ url_for('static', filename='docs/legal/Политика_конфиденциальности_ЖКХ40.pdf') }}">Политикой конфиденциальности</a>
+                        и
+                        <a href="{{ url_for('static', filename='docs/legal/Пользовательское_соглашение_ЖКХ40.pdf') }}">Пользовательским соглашением</a>,
+                        и даёте согласие на обработку введённой информации только в рамках
+                        текущего документа.
+                    </p>
+                    <div class="modal-actions">
+                        <a class="button-secondary" href="{{ url_for('knowledge') }}#documents">Назад</a>
+                        <button type="button" class="button-primary" data-consent-accept>Продолжить</button>
+                    </div>
+                </div>
+            </div>
+
+            <form class="fill-form" action="{{ url_for('termination_notice_export_docx') }}" method="post" data-pdf-form>
+                <div class="fill-grid">
+                    <label>
+                        <span>Наименование старой УК</span>
+                        <input type="text" name="recipient_company" value="{{ default_form.recipient_company }}">
+                    </label>
+                    <label>
+                        <span>Адрес старой УК</span>
+                        <input type="text" name="recipient_address" value="{{ default_form.recipient_address }}">
+                    </label>
+                    <label class="span-two">
+                        <span>ФИО уполномоченного лица</span>
+                        <input type="text" name="applicant_name" value="{{ default_form.applicant_name }}">
+                    </label>
+                    <label>
+                        <span>Телефон</span>
+                        <input type="text" name="applicant_phone" value="{{ default_form.applicant_phone }}">
+                    </label>
+                    <label>
+                        <span>Номер протокола (полномочия)</span>
+                        <input type="text" name="authority_protocol_number" value="{{ default_form.authority_protocol_number }}">
+                    </label>
+                    <label>
+                        <span>Дата протокола (полномочия)</span>
+                        <input type="date" name="authority_protocol_date" value="{{ default_form.authority_protocol_date }}">
+                    </label>
+                    <label>
+                        <span>Дата ОСС о расторжении</span>
+                        <input type="date" name="oss_meeting_date" value="{{ default_form.oss_meeting_date }}">
+                    </label>
+                    <label>
+                        <span>Город МКД</span>
+                        <input type="text" name="house_city" value="{{ default_form.house_city }}">
+                    </label>
+                    <label>
+                        <span>Улица МКД</span>
+                        <input type="text" name="house_street" value="{{ default_form.house_street }}">
+                    </label>
+                    <label>
+                        <span>Дом МКД</span>
+                        <input type="text" name="house_building" value="{{ default_form.house_building }}">
+                    </label>
+                    <label class="span-two">
+                        <span>Адрес заявителя</span>
+                        <input type="text" name="applicant_address" value="{{ default_form.applicant_address }}">
+                    </label>
+                    <label>
+                        <span>Номер договора управления МКД</span>
+                        <input type="text" name="contract_number" value="{{ default_form.contract_number }}">
+                    </label>
+                    <label>
+                        <span>Дата договора управления</span>
+                        <input type="date" name="contract_date" value="{{ default_form.contract_date }}">
+                    </label>
+                    <label>
+                        <span>Дата расторжения (или дата в договоре)</span>
+                        <input type="date" name="termination_effective_date" value="{{ default_form.termination_effective_date }}">
+                    </label>
+                    <label>
+                        <span>Новая УК / ТСЖ</span>
+                        <input type="text" name="new_manager_name" value="{{ default_form.new_manager_name }}">
+                    </label>
+                    <label>
+                        <span>ИНН новой УК</span>
+                        <input type="text" name="new_manager_inn" value="{{ default_form.new_manager_inn }}">
+                    </label>
+                    <label>
+                        <span>Номер лицензии новой УК</span>
+                        <input type="text" name="new_manager_license" value="{{ default_form.new_manager_license }}">
+                    </label>
+                    <label>
+                        <span>Количество листов доказательств</span>
+                        <input type="text" name="evidence_pages" value="{{ default_form.evidence_pages }}">
+                    </label>
+                    <label>
+                        <span>Дата подписи уведомления</span>
+                        <input type="date" name="sign_date" value="{{ default_form.sign_date }}">
+                    </label>
+                    <label>
+                        <span>ФИО в подписи</span>
+                        <input type="text" name="signer_name" value="{{ default_form.signer_name }}">
+                    </label>
+                    <label class="span-two">
+                        <span>Выбранное основание расторжения</span>
+                        <textarea name="basis" rows="5">{{ default_form.basis }}</textarea>
+                    </label>
+                </div>
+
+                <div class="export-actions">
+                    <button type="submit" class="button-primary">Выгрузить в DOCX</button>
+                    <button type="submit" class="button-secondary" formaction="{{ url_for('termination_notice_export_pdf') }}" formmethod="post">Выгрузить в PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
