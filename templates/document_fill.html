@@ -19,13 +19,29 @@
                     <h2>Условия использования</h2>
                     <p>
                         Нажимая «Продолжить», вы подтверждаете, что ознакомлены с
-                        информационно-справочным характером шаблона, а также с
-                        <a href="{{ url_for('static', filename='docs/legal/Политика_конфиденциальности_ЖКХ40.pdf') }}">Политикой конфиденциальности</a>
-                        и
-                        <a href="{{ url_for('static', filename='docs/legal/Пользовательское_соглашение_ЖКХ40.pdf') }}">Пользовательским соглашением</a>,
-                        и даёте согласие на обработку введённой информации только в рамках
-                        текущего документа.
+                        информационно-справочным характером шаблона и даёте согласие на обработку
+                        введённой информации только в рамках текущего документа.
                     </p>
+                    <div class="consent-checklist">
+                        <label class="consent-check-item">
+                            <input type="checkbox" data-consent-checkbox>
+                            <span>
+                                Я ознакомлен(а) с
+                                <a href="{{ url_for('static', filename='docs/legal/Политика_конфиденциальности_ЖКХ40.pdf') }}" target="_blank" rel="noopener noreferrer">
+                                    Политикой конфиденциальности
+                                </a>
+                            </span>
+                        </label>
+                        <label class="consent-check-item">
+                            <input type="checkbox" data-consent-checkbox>
+                            <span>
+                                Я ознакомлен(а) с
+                                <a href="{{ url_for('static', filename='docs/legal/Пользовательское_соглашение_ЖКХ40.pdf') }}" target="_blank" rel="noopener noreferrer">
+                                    Пользовательским соглашением
+                                </a>
+                            </span>
+                        </label>
+                    </div>
                     <div class="modal-actions">
                         <a class="button-secondary" href="{{ url_for('knowledge') }}#documents">Назад</a>
                         <button type="button" class="button-primary" data-consent-accept>Продолжить</button>

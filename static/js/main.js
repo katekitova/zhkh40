@@ -544,13 +544,32 @@
     }
 
     const consentModal = document.querySelector("[data-consent-modal]");
-    const acceptConsent = document.querySelector("[data-consent-accept]");
+    const acceptConsent = consentModal ? consentModal.querySelector("[data-consent-accept]") : null;
+    const consentChecks = consentModal ? consentModal.querySelectorAll("[data-consent-checkbox]") : [];
     if (consentModal && acceptConsent) {
+        function syncConsentState() {
+            if (!consentChecks.length) {
+                acceptConsent.disabled = false;
+                return;
+            }
+            acceptConsent.disabled = !Array.from(consentChecks).every(function (item) {
+                return item.checked;
+            });
+        }
+
         if (window.sessionStorage.getItem("recalc-consent") === "accepted") {
             consentModal.classList.add("is-hidden");
+        } else {
+            syncConsentState();
+            consentChecks.forEach(function (item) {
+                item.addEventListener("change", syncConsentState);
+            });
         }
 
         acceptConsent.addEventListener("click", function () {
+            if (acceptConsent.disabled) {
+                return;
+            }
             window.sessionStorage.setItem("recalc-consent", "accepted");
             consentModal.classList.add("is-hidden");
         });
