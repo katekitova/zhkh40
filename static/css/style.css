@@ -982,6 +982,53 @@ textarea::placeholder {
     background: rgba(255, 255, 255, 0.96);
 }
 
+.consent-card h2 {
+    margin: 0 0 14px;
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1.02;
+}
+
+.consent-card p {
+    margin: 0;
+    font-size: 1.12rem;
+    line-height: 1.45;
+}
+
+.consent-checklist {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.consent-check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #2a3960;
+    font-size: 1.06rem;
+    line-height: 1.4;
+}
+
+.consent-check-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 3px;
+    accent-color: var(--primary);
+    flex: 0 0 auto;
+}
+
+.consent-check-item a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+[data-consent-accept]:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 .export-actions,
 .modal-actions {
     grid-template-columns: repeat(2, minmax(0, max-content));
