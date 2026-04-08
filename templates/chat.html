@@ -6,7 +6,7 @@
         <p class="eyebrow">Помощь по ЖКХ</p>
         <h1>Чат-помощник по вопросам ЖКХ</h1>
         <p class="hero-lead narrow-lead">
-            Можно идти по готовым веткам или просто написать проблему своими словами: тарифы, жалобы,
+            Можно идти по готовым веткам или просто описать свою проблему: тарифы, жалобы,
             смена УК, отопление, вода, начисления и другие ситуации по дому.
         </p>
     </div>
@@ -14,13 +14,13 @@
 
 <section class="content-section content-section-last">
     <div class="container">
-        <div class="assistant-panel assistant-page full-width-chat" data-chat-root data-selected-scenario="{{ selected_scenario }}" data-initial-query="{{ initial_query }}" data-scenarios='{{ chat_scenarios|tojson }}' data-chat-endpoint="{{ url_for('api_chat_message') }}" data-default-title="Напишите вопрос своими словами" data-default-summary="Можно выбрать тему кнопками выше или просто описать проблему. Если найду подходящий путь, сначала уточню, правильно ли понял ваш вопрос.">
+        <div class="assistant-panel assistant-page full-width-chat" data-chat-root data-selected-scenario="{{ selected_scenario }}" data-initial-query="{{ initial_query }}" data-scenarios='{{ chat_scenarios|tojson }}' data-chat-endpoint="{{ url_for('api_chat_message') }}" data-default-title="Опишите свою проблему" data-default-summary="Можно выбрать тему кнопками выше или просто описать свою проблему. Если найду подходящий путь, сначала уточню, правильно ли понял вашу проблему.">
             <div class="assistant-panel-head">
                 <div>
                     <p class="assistant-kicker">Популярные сценарии</p>
-                    <h2 data-scenario-title>Напишите вопрос своими словами</h2>
+                    <h2 data-scenario-title>Опишите свою проблему</h2>
                 </div>
-                <p class="assistant-summary" data-scenario-summary>Можно выбрать тему кнопками выше или просто описать проблему. Если найду подходящий путь, сначала уточню, правильно ли понял ваш вопрос.</p>
+                <p class="assistant-summary" data-scenario-summary>Можно выбрать тему кнопками выше или просто описать свою проблему. Если найду подходящий путь, сначала уточню, правильно ли понял вашу проблему.</p>
             </div>
 
             <div class="scenario-tabs scenario-tabs-wide">
@@ -40,7 +40,7 @@
                 <form class="chat-footer" data-chat-form>
                     <label class="search-field chat-input-field">
                         <span class="search-icon" aria-hidden="true"></span>
-                        <input type="text" name="message" placeholder="Напишите проблему обычными словами" data-chat-input value="{{ initial_query }}">
+                        <input type="text" name="message" placeholder="Опишите свою проблему" data-chat-input value="{{ initial_query }}">
                     </label>
                     <button type="submit" class="button-primary" data-chat-submit>Отправить</button>
                 </form>
