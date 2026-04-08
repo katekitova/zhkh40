@@ -1,0 +1,92 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="subpage-hero">
+    <div class="container subpage-hero-inner align-left">
+        <p class="eyebrow">Документ</p>
+        <h1>{{ preview_title }}</h1>
+        <p class="hero-lead narrow-lead">
+            Просмотр уведомления, которое можно заполнить на сайте и выгрузить в DOCX или PDF.
+        </p>
+    </div>
+</section>
+
+<section class="content-section content-section-last">
+    <div class="container document-layout {% if print_mode %}print-layout{% endif %}">
+        {% if not print_mode %}
+            <aside class="document-note">
+                <p>* Является примером типового документа. Формулировки можно адаптировать под ситуацию дома.</p>
+                <p>* Материал предоставлен в информационно-справочных целях и встроен в сайт как рабочий шаблон.</p>
+            </aside>
+        {% endif %}
+
+        <div class="document-stage">
+            {% if not print_mode %}
+                <div class="document-toolbar">
+                    <a href="{{ url_for('termination_notice_fill') }}">Заполнить форму</a>
+                    <a href="{{ url_for('static', filename='docs/management/templates/Уведомление о расторжении договора с УК.docx') }}">Исходный DOCX</a>
+                </div>
+            {% endif %}
+
+            <article class="document-sheet">
+                <div class="document-sheet-header">
+                    <div class="document-recipient">
+                        <p>{{ form_data.recipient }}</p>
+                        <p>от {{ form_data.applicant }}</p>
+                        <p>{{ form_data.address }}</p>
+                    </div>
+                </div>
+
+                <div class="document-body">
+                    <h2>Уведомление</h2>
+                    <p>
+                        Настоящим уведомляю о расторжении
+                        <strong>{{ form_data.contract_number }}</strong>
+                        в отношении многоквартирного дома по адресу
+                        <strong>{{ form_data.address }}</strong>.
+                    </p>
+                    <p>
+                        Основание решения собственников:
+                        <strong>{{ form_data.protocol_number }}</strong> от
+                        <strong>{{ form_data.protocol_date }}</strong>.
+                    </p>
+                    <p>
+                        Дата прекращения управления:
+                        <strong>{{ form_data.termination_date }}</strong>.
+                    </p>
+                    <p>
+                        Новая управляющая организация (или ТСЖ):
+                        <strong>{{ form_data.new_manager }}</strong>.
+                    </p>
+                    <p><strong>Дополнительное основание:</strong> {{ form_data.basis }}</p>
+                    <p>
+                        Прошу передать техническую документацию, сведения по лицевым счетам,
+                        ключи и иные материалы новой организации в установленные законом сроки.
+                    </p>
+                </div>
+
+                <div class="document-signature">
+                    <span>Дата ____________________</span>
+                    <span>Подпись ____________________</span>
+                </div>
+            </article>
+
+            {% if not print_mode %}
+                <div class="document-cta">
+                    <a class="button-primary" href="{{ url_for('termination_notice_fill') }}">Заполнить и выгрузить</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+    {% if print_mode %}
+        <script>
+            window.addEventListener('load', function () {
+                window.print();
+            });
+        </script>
+    {% endif %}
+{% endblock %}

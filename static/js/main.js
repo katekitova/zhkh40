@@ -556,15 +556,6 @@
         });
     }
 
-    const previewPdfButton = document.querySelector("[data-preview-pdf]");
-    const pdfForm = document.querySelector("[data-pdf-form]");
-    if (previewPdfButton && pdfForm) {
-        previewPdfButton.addEventListener("click", function () {
-            const data = new URLSearchParams(new FormData(pdfForm));
-            window.open(previewPdfButton.dataset.previewUrl + "?" + data.toString(), "_blank");
-        });
-    }
-
     function splitByThresholds(amount, thresholds) {
         const first = Math.min(amount, thresholds[0]);
         const second = Math.min(Math.max(amount - thresholds[0], 0), thresholds[1] - thresholds[0]);
@@ -835,7 +826,7 @@
                     formParts.push([
                         "<label class=\"calculator-checkbox-line\">",
                         "<input type=\"checkbox\" data-flag=\"large_family\"" + (serviceState.large_family ? " checked" : "") + ">",
-                        "<span>Многодетная семья: считать весь объём по первому диапазону</span>",
+                        "<span>Многодетная семья</span>",
                         "</label>"
                     ].join(""));
 
@@ -927,6 +918,7 @@
                         total: total,
                         basis: isMeter ? "По счётчику" : "По нормативу",
                         quantity: totalVolume,
+                        largeFamilyHasEffect: serviceState.large_family ? totalVolume > thresholds[0] : false,
                     };
                 }
 
@@ -962,6 +954,7 @@
                         total: total,
                         basis: isMeter ? "По счётчику" : "По нормативу",
                         quantity: totalVolume,
+                        largeFamilyHasEffect: serviceState.large_family ? totalVolume > thresholds[0] : false,
                     };
                 }
 
@@ -1000,6 +993,7 @@
                     total: total,
                     basis: isMeter ? "По счётчику" : "По нормативу",
                     quantity: totalVolume,
+                    largeFamilyHasEffect: serviceState.large_family ? totalVolume > thresholds[0] : false,
                 };
             }
 
@@ -1078,6 +1072,7 @@
                         total: periodResult.total,
                         basis: periodResult.basis,
                         quantity: periodResult.quantity,
+                        largeFamilyHasEffect: Boolean(periodResult.largeFamilyHasEffect),
                     };
                 });
 
@@ -1098,12 +1093,15 @@
                     const profile = (service.profiles || []).find(function (item) {
                         return item.key === serviceState.profile;
                     });
+                    const largeFamilyHasEffect = result.rows.some(function (row) {
+                        return row.largeFamilyHasEffect;
+                    });
                     details.push({ label: "Тип жилья", value: profile ? profile.label : serviceState.profile });
                     details.push({ label: "Режим", value: serviceState.mode === "zone" && String(serviceState.profile).indexOf("heating_") !== 0 ? (serviceState.zone_mode === "three_zone" ? "Трёхзонный" : "Двухзонный") : "Одноставочный" });
                     details.push({ label: "Основа", value: serviceState.input_method === "meter" ? "Счётчик" : "Норматив" });
                     details.push({ label: "ОДН", value: serviceState.odn_mode === "with_odn" ? "Добавлены" : "Не учитываются" });
                     if (serviceState.large_family) {
-                        details.push({ label: "Льгота", value: "Многодетная семья" });
+                        details.push({ label: "Льгота", value: largeFamilyHasEffect ? "Многодетная семья" : "Многодетная семья (объём в 1-м диапазоне)" });
                     }
                 }
 
@@ -1115,13 +1113,20 @@
                     details.push({ label: "Режим оплаты", value: serviceState.payment_mode === "year_round" ? "Равномерно за год" : "Только в сезон" });
                 }
 
+                const largeFamilyHint = service.type === "electricity" && serviceState.large_family && !result.rows.some(function (row) {
+                    return row.largeFamilyHasEffect;
+                })
+                    ? "<p class=\"calculator-inline-note\">Льгота не меняет итог при текущих данных: объём в каждом периоде остаётся в первом диапазоне.</p>"
+                    : "";
+
                 resultNode.innerHTML = [
                     "<h3>" + escapeHtml(result.title) + "</h3>",
                     "<div class=\"calculator-result-list\">",
                     result.rows.map(function (row) {
-                        return "<p>Сумма за " + escapeHtml(row.label) + ": <strong>" + currency(row.total) + " руб.</strong></p>";
+                        return "<p>Результат за месяц (" + escapeHtml(row.label) + "): <strong>" + currency(row.total) + " руб.</strong></p>";
                     }).join(""),
                     "</div>",
+                    largeFamilyHint,
                     details.length ? "<div class=\"calculator-result-meta\">" + details.map(function (detail) {
                         return "<div class=\"result-row\"><span>" + escapeHtml(detail.label) + "</span><strong>" + escapeHtml(detail.value) + "</strong></div>";
                     }).join("") + "</div>" : ""

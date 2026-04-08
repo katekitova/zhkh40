@@ -6,7 +6,7 @@
         <p class="eyebrow">Форма документа</p>
         <h1>Форма заполнения</h1>
         <p class="hero-lead narrow-lead">
-            Заполни основные поля, после чего можно скачать DOCX-версию или открыть печатную страницу для PDF.
+            Заполни основные поля, после чего можно скачать DOCX-версию или сразу выгрузить PDF.
         </p>
     </div>
 </section>
@@ -18,9 +18,13 @@
                 <div class="consent-card">
                     <h2>Условия использования</h2>
                     <p>
-                        Нажимая «Продолжить», вы подтверждаете, что ознакомлены с примерным
-                        характером шаблона и даёте согласие на обработку введённой информации
-                        только в рамках текущего документа.
+                        Нажимая «Продолжить», вы подтверждаете, что ознакомлены с
+                        информационно-справочным характером шаблона, а также с
+                        <a href="{{ url_for('static', filename='docs/legal/Политика_конфиденциальности_ЖКХ40.pdf') }}">Политикой конфиденциальности</a>
+                        и
+                        <a href="{{ url_for('static', filename='docs/legal/Пользовательское_соглашение_ЖКХ40.pdf') }}">Пользовательским соглашением</a>,
+                        и даёте согласие на обработку введённой информации только в рамках
+                        текущего документа.
                     </p>
                     <div class="modal-actions">
                         <a class="button-secondary" href="{{ url_for('knowledge') }}#documents">Назад</a>
@@ -63,7 +67,7 @@
 
                 <div class="export-actions">
                     <button type="submit" class="button-primary">Выгрузить в DOCX</button>
-                    <button type="button" class="button-secondary" data-preview-pdf data-preview-url="{{ url_for('recalculation_print') }}">Выгрузить в PDF</button>
+                    <button type="submit" class="button-secondary" formaction="{{ url_for('recalculation_export_pdf') }}" formmethod="post">Выгрузить в PDF</button>
                 </div>
             </form>
         </div>
