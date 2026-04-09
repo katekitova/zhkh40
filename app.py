@@ -1393,16 +1393,18 @@ def get_pdf_fonts():
     if PDF_FONT_CACHE:
         return PDF_FONT_CACHE
 
-    regular_font = "Helvetica"
-    bold_font = "Helvetica-Bold"
+    regular_font = "DejaVuSans"
+    bold_font = "DejaVuSans-Bold"
 
     regular_candidates = [
+        Path("/var/www/u3471892/data/www/xn--40-plcq9c.xn--p1ai/static/fonts/DejaVuSans.ttf"),
         Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
         Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
         Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
         Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
     ]
     bold_candidates = [
+        Path("/var/www/u3471892/data/www/xn--40-plcq9c.xn--p1ai/static/fonts/DejaVuSans-Bold.ttf"),
         Path("/System/Library/Fonts/Supplemental/Arial Bold.ttf"),
         Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
         Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),

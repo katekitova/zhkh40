@@ -47,8 +47,8 @@
     const chatRoot = document.querySelector("[data-chat-root]");
     if (chatRoot) {
         const scenarios = JSON.parse(chatRoot.dataset.scenarios || "[]");
-        const defaultTitle = chatRoot.dataset.defaultTitle || "Напишите вопрос своими словами";
-        const defaultSummary = chatRoot.dataset.defaultSummary || "Можно выбрать тему кнопками выше или просто описать проблему.";
+        const defaultTitle = chatRoot.dataset.defaultTitle || "Опишите свою проблему";
+        const defaultSummary = chatRoot.dataset.defaultSummary || "Можно выбрать тему кнопками выше или просто описать свою проблему.";
         const storageKey = "jkh40-chat-state-v2";
         const explicitScenario = (chatRoot.dataset.selectedScenario || "").trim();
         const titleNode = chatRoot.querySelector("[data-scenario-title]");
@@ -156,7 +156,7 @@
                     }
                 });
 
-                setInputState(waitingForInput, state.placeholder || "Напишите проблему обычными словами");
+                setInputState(waitingForInput, state.placeholder || "Опишите свою проблему");
                 scrollChatToEnd();
                 return true;
             } catch (error) {
@@ -326,7 +326,7 @@
             waitingForInput = enabled;
             input.disabled = requestInFlight;
             submitButton.disabled = requestInFlight;
-            input.placeholder = placeholder || "Напишите проблему обычными словами";
+            input.placeholder = placeholder || "Опишите свою проблему";
             if (enabled) {
                 input.focus();
             } else if (!requestInFlight) {
@@ -384,9 +384,9 @@
                 messagesNode.innerHTML = "";
             }
             syncScenarioHeader();
-            setInputState(false, "Напишите проблему обычными словами");
+            setInputState(false, "Опишите свою проблему");
             if (resetMessages) {
-                appendBubble("assistant", "Добрый день! Напишите свой вопрос своими словами или выберите тему выше. Я постараюсь подсказать, с чего лучше начать.");
+                appendBubble("assistant", "Добрый день! Опишите свою проблему или выберите тему выше. Я постараюсь подсказать, с чего лучше начать.");
             }
             saveChatState();
         }
@@ -417,7 +417,7 @@
             setInputState(false);
             pendingScenarioMatch = null;
 
-            appendBubble("assistant", "Добрый день! Можно либо идти по кнопкам, либо просто написать проблему своими словами. Я попробую найти ближайший готовый ответ.");
+            appendBubble("assistant", "Добрый день! Можно идти по кнопкам или просто описать свою проблему. Я попробую найти ближайший готовый ответ.");
             moveToNode(currentScenario.start_node);
             saveChatState();
         }
@@ -434,7 +434,7 @@
             pendingScenarioMatch = null;
             currentNode = null;
             syncScenarioHeader();
-            setInputState(false, "Напишите проблему обычными словами");
+            setInputState(false, "Опишите свою проблему");
             moveToNode(currentScenario.start_node);
             saveChatState();
         }
@@ -497,7 +497,7 @@
                 .finally(function () {
                     input.value = "";
                     setRequestState(false);
-                    input.placeholder = waitingForInput ? (currentNode && currentNode.input_placeholder) || "Введите ответ" : "Напишите проблему обычными словами";
+                    input.placeholder = waitingForInput ? (currentNode && currentNode.input_placeholder) || "Введите ответ" : "Опишите свою проблему";
                 });
         }
 
@@ -544,13 +544,32 @@
     }
 
     const consentModal = document.querySelector("[data-consent-modal]");
-    const acceptConsent = document.querySelector("[data-consent-accept]");
+    const acceptConsent = consentModal ? consentModal.querySelector("[data-consent-accept]") : null;
+    const consentChecks = consentModal ? consentModal.querySelectorAll("[data-consent-checkbox]") : [];
     if (consentModal && acceptConsent) {
+        function syncConsentState() {
+            if (!consentChecks.length) {
+                acceptConsent.disabled = false;
+                return;
+            }
+            acceptConsent.disabled = !Array.from(consentChecks).every(function (item) {
+                return item.checked;
+            });
+        }
+
         if (window.sessionStorage.getItem("recalc-consent") === "accepted") {
             consentModal.classList.add("is-hidden");
+        } else {
+            syncConsentState();
+            consentChecks.forEach(function (item) {
+                item.addEventListener("change", syncConsentState);
+            });
         }
 
         acceptConsent.addEventListener("click", function () {
+            if (acceptConsent.disabled) {
+                return;
+            }
             window.sessionStorage.setItem("recalc-consent", "accepted");
             consentModal.classList.add("is-hidden");
         });
@@ -791,7 +810,6 @@
             function renderForm() {
                 const service = currentService();
                 const serviceState = currentState();
-                const heatingProfile = service.slug === "electricity" && String(serviceState.profile || "").indexOf("heating_") === 0;
                 const formParts = [];
 
                 headingNode.textContent = service.label;
@@ -806,7 +824,7 @@
                         { key: "zone", label: "Зонный тариф" }
                     ], serviceState.mode));
 
-                    if (serviceState.mode === "zone" && !heatingProfile) {
+                    if (serviceState.mode === "zone") {
                         formParts.push(choiceGroup("Зонный режим", "zone_mode", [
                             { key: "two_zone", label: "Двухзонный" },
                             { key: "three_zone", label: "Трёхзонный" }
@@ -829,10 +847,6 @@
                         "<span>Многодетная семья</span>",
                         "</label>"
                     ].join(""));
-
-                    if (heatingProfile) {
-                        formParts.push("<p class=\"calculator-inline-note\">Для электроотопления показываем одноставочный расчёт, потому что в присланных материалах зонные ставки отдельно не приведены.</p>");
-                    }
 
                     if (service.note) {
                         formParts.push("<p class=\"calculator-inline-note\">" + escapeHtml(service.note) + "</p>");
@@ -870,7 +884,7 @@
             }
 
             function electricityProfileForZones(profile) {
-                if (profile === "heating_electric") {
+                if (profile === "electric" || profile === "heating_electric") {
                     return "electric";
                 }
                 return "gas";
@@ -887,9 +901,7 @@
                 const values = serviceState.period_values[periodKey];
                 const isMeter = serviceState.input_method === "meter";
                 const profile = serviceState.profile;
-                const effectiveMode = serviceState.mode === "zone" && String(profile).indexOf("heating_") !== 0
-                    ? serviceState.zone_mode
-                    : "single";
+                const effectiveMode = serviceState.mode === "zone" ? serviceState.zone_mode : "single";
                 let sourceProfile = profile;
                 let total = 0;
                 let totalVolume = 0;
@@ -1097,7 +1109,7 @@
                         return row.largeFamilyHasEffect;
                     });
                     details.push({ label: "Тип жилья", value: profile ? profile.label : serviceState.profile });
-                    details.push({ label: "Режим", value: serviceState.mode === "zone" && String(serviceState.profile).indexOf("heating_") !== 0 ? (serviceState.zone_mode === "three_zone" ? "Трёхзонный" : "Двухзонный") : "Одноставочный" });
+                    details.push({ label: "Режим", value: serviceState.mode === "zone" ? (serviceState.zone_mode === "three_zone" ? "Трёхзонный" : "Двухзонный") : "Одноставочный" });
                     details.push({ label: "Основа", value: serviceState.input_method === "meter" ? "Счётчик" : "Норматив" });
                     details.push({ label: "ОДН", value: serviceState.odn_mode === "with_odn" ? "Добавлены" : "Не учитываются" });
                     if (serviceState.large_family) {
@@ -1152,9 +1164,6 @@
                 const value = choiceButtonNode.dataset.choiceValue;
                 serviceState[group] = value;
 
-                if (service.slug === "electricity" && group === "profile" && String(value).indexOf("heating_") === 0) {
-                    serviceState.mode = "single";
-                }
                 if (service.slug === "gas" && group === "usage" && value === "heating") {
                     serviceState.input_method = "meter";
                 }
