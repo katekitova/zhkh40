@@ -1528,10 +1528,12 @@ def get_pdf_fonts():
     if PDF_FONT_CACHE:
         return PDF_FONT_CACHE
 
-    regular_font = "DejaVuSans"
-    bold_font = "DejaVuSans-Bold"
+    regular_font = "Helvetica"
+    bold_font = "Helvetica-Bold"
+    local_fonts_dir = Path(app.root_path) / "static" / "fonts"
 
     regular_candidates = [
+        local_fonts_dir / "DejaVuSans.ttf",
         Path("/var/www/u3471892/data/www/xn--40-plcq9c.xn--p1ai/static/fonts/DejaVuSans.ttf"),
         Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
         Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
@@ -1539,6 +1541,7 @@ def get_pdf_fonts():
         Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
     ]
     bold_candidates = [
+        local_fonts_dir / "DejaVuSans-Bold.ttf",
         Path("/var/www/u3471892/data/www/xn--40-plcq9c.xn--p1ai/static/fonts/DejaVuSans-Bold.ttf"),
         Path("/System/Library/Fonts/Supplemental/Arial Bold.ttf"),
         Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
@@ -1565,6 +1568,12 @@ def get_pdf_fonts():
             break
         except Exception:
             continue
+
+    if regular_font == "JKH40Regular":
+        try:
+            pdfmetrics.registerFontFamily("JKH40", normal=regular_font, bold=bold_font)
+        except Exception:
+            pass
 
     PDF_FONT_CACHE = (regular_font, bold_font)
     return PDF_FONT_CACHE
