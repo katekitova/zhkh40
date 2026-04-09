@@ -1439,6 +1439,7 @@ textarea::placeholder {
     margin: 0;
     color: var(--muted);
     line-height: 1.55;
+    white-space: pre-line;
 }
 
 .result-note {
