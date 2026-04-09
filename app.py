@@ -1209,6 +1209,7 @@ def find_best_chat_answer(query):
         "answer": best_entry["answer"],
         "links": transform_links(best_entry.get("links", [])),
         "scenario": best_entry.get("scenario"),
+        "scenario_node": best_entry.get("scenario_node"),
         "score": round(best_score, 3),
     }
 

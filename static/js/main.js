@@ -460,15 +460,17 @@
                 return;
             }
 
+            const matchedScenario = pendingScenarioMatch;
             currentScenario = scenarios.find(function (item) {
-                return item.slug === pendingScenarioMatch.scenario;
+                return item.slug === matchedScenario.scenario;
             }) || currentScenario;
 
             pendingScenarioMatch = null;
             currentNode = null;
             syncScenarioHeader();
             setInputState(false, "Опишите свою проблему");
-            moveToNode(currentScenario.start_node);
+            const targetNodeKey = matchedScenario.scenario_node || currentScenario.start_node;
+            moveToNode(targetNodeKey);
             saveChatState();
         }
 
