@@ -2143,6 +2143,24 @@ body {
     line-height: 1.45;
 }
 
+.chat-storage-note p {
+    margin: 0;
+}
+
+.clear-chat-link {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.clear-chat-link:hover,
+.clear-chat-link:focus-visible {
+    color: var(--primary-deep);
+    text-decoration: underline;
+}
+
 .calculator-layout {
     gap: 28px;
     align-items: start;
