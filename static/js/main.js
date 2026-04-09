@@ -58,6 +58,7 @@
         const form = chatRoot.querySelector("[data-chat-form]");
         const input = chatRoot.querySelector("[data-chat-input]");
         const submitButton = chatRoot.querySelector("[data-chat-submit]");
+        const resetButton = chatRoot.querySelector("[data-chat-reset]");
         const initialQuery = (chatRoot.dataset.initialQuery || "").trim();
         const chatEndpoint = chatRoot.dataset.chatEndpoint || "/api/chat/message";
         let currentScenario = null;
@@ -98,6 +99,13 @@
                 return parsed;
             } catch (error) {
                 return { views: {}, activeSlug: "" };
+            }
+        }
+
+        function clearChatState() {
+            try {
+                window.sessionStorage.removeItem(storageKey);
+            } catch (error) {
             }
         }
 
@@ -339,11 +347,17 @@
             if (loading) {
                 input.disabled = true;
                 submitButton.disabled = true;
+                if (resetButton) {
+                    resetButton.disabled = true;
+                }
                 submitButton.textContent = "Ищу ответ...";
                 return;
             }
             input.disabled = false;
             submitButton.disabled = false;
+            if (resetButton) {
+                resetButton.disabled = false;
+            }
             submitButton.textContent = "Отправить";
         }
 
@@ -391,6 +405,25 @@
             saveChatState();
         }
 
+        function resetChat() {
+            if (requestInFlight) {
+                return;
+            }
+
+            clearChatState();
+            disableActiveChoices();
+            input.value = "";
+            startNeutralChat(true);
+
+            try {
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete("q");
+                cleanUrl.searchParams.delete("scenario");
+                window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+            } catch (error) {
+            }
+        }
+
         function chooseScenario(slug) {
             const normalizedSlug = (slug || "").trim();
             saveChatState();
@@ -427,15 +460,17 @@
                 return;
             }
 
+            const matchedScenario = pendingScenarioMatch;
             currentScenario = scenarios.find(function (item) {
-                return item.slug === pendingScenarioMatch.scenario;
+                return item.slug === matchedScenario.scenario;
             }) || currentScenario;
 
             pendingScenarioMatch = null;
             currentNode = null;
             syncScenarioHeader();
             setInputState(false, "Опишите свою проблему");
-            moveToNode(currentScenario.start_node);
+            const targetNodeKey = matchedScenario.scenario_node || currentScenario.start_node;
+            moveToNode(targetNodeKey);
             saveChatState();
         }
 
@@ -506,6 +541,13 @@
                 chooseScenario(tab.dataset.scenarioSlug);
             });
         });
+
+        if (resetButton) {
+            resetButton.addEventListener("click", function (event) {
+                event.preventDefault();
+                resetChat();
+            });
+        }
 
         form.addEventListener("submit", function (event) {
             event.preventDefault();

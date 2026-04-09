@@ -7,11 +7,14 @@ from difflib import SequenceMatcher
 from io import BytesIO
 from markupsafe import Markup, escape as markup_escape
 from pathlib import Path
+from threading import Lock
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_file, session, url_for
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from site_data import (
     ABOUT_BLOCKS,
@@ -56,6 +59,9 @@ PDF_FONT_CACHE = None
 TERMINATION_NOTICE_DOC_PATH = "docs/management/templates/Уведомление о расторжении договора с УК.docx"
 
 WORD_RE = re.compile(r"[а-яёa-z0-9]+", re.IGNORECASE)
+CHAT_SEARCH_INDEX_LOCK = Lock()
+CHAT_SEARCH_INDEX = None
+
 DOCX_INLINE_TOKEN_RE = re.compile(
     r"(?P<email>\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b)"
     r"|(?P<url>(?:https?://|www\.)[^\s<>()]+|(?<![@/])\b(?:[a-z0-9-]+\.)+(?:ru|рф|com|org|net|gov|edu)(?:/[^\s<>()]*)?)"
@@ -998,6 +1004,91 @@ def stemmed_tokens(value):
     return {stem_token(token) for token in tokenize(value) if token}
 
 
+def build_chat_search_document(entry):
+    scenario_slug = entry.get("scenario")
+    scenario = next((item for item in CHAT_SCENARIOS if item.get("slug") == scenario_slug), None)
+    parts = [
+        entry.get("title", ""),
+        entry.get("title", ""),
+        " ".join(entry.get("keywords", [])),
+        entry.get("answer", ""),
+    ]
+
+    if scenario:
+        parts.extend([scenario.get("title", ""), scenario.get("summary", "")])
+        for node in scenario.get("nodes", {}).values():
+            parts.append(node.get("prompt", ""))
+            if node.get("input_placeholder"):
+                parts.append(node["input_placeholder"])
+            for choice in node.get("choices", []):
+                parts.append(choice.get("label", ""))
+            result = node.get("result")
+            if isinstance(result, dict):
+                parts.append(result.get("title", ""))
+                parts.append(result.get("text", ""))
+
+    return " ".join(part for part in parts if part)
+
+
+def chat_tfidf_analyzer(value):
+    normalized_value = normalize_text(value)
+    tokens = tokenize(normalized_value)
+    stems = [stem_token(token) for token in tokens]
+    return tokens + stems
+
+
+def get_chat_search_index():
+    global CHAT_SEARCH_INDEX
+
+    if CHAT_SEARCH_INDEX is not None:
+        return CHAT_SEARCH_INDEX
+
+    with CHAT_SEARCH_INDEX_LOCK:
+        if CHAT_SEARCH_INDEX is not None:
+            return CHAT_SEARCH_INDEX
+
+        documents = [build_chat_search_document(entry) for entry in CHAT_KNOWLEDGE_BASE]
+        doc_lengths = [len(tokenize(document)) for document in documents]
+
+        if documents:
+            vectorizer = TfidfVectorizer(analyzer=chat_tfidf_analyzer, lowercase=False, sublinear_tf=True)
+            matrix = vectorizer.fit_transform(documents)
+        else:
+            vectorizer = None
+            matrix = None
+
+        CHAT_SEARCH_INDEX = {
+            "vectorizer": vectorizer,
+            "matrix": matrix,
+            "documents": documents,
+            "doc_lengths": doc_lengths,
+        }
+
+    return CHAT_SEARCH_INDEX
+
+
+def detect_chat_intent_scenario(query):
+    query_lower = normalize_text(query)
+    if not query_lower:
+        return ""
+
+    if any(word in query_lower for word in ["жалоб", "пожаловат", "гжи", "прокурат", "грязн", "крыш", "тишин", "санитар", "бездейств"]):
+        return "complaints"
+    if any(word in query_lower for word in ["смена ук", "тсж", "управляющ", "двойн", "осс", "собрани"]):
+        return "change_uk"
+    if any(word in query_lower for word in ["тариф", "квитанц", "начислен", "стоимост", "электроэнерг", "свет", "тко", "газ"]):
+        return "tariffs"
+    if any(word in query_lower for word in ["отоп", "холодно", "батар"]):
+        return "heating"
+    if any(word in query_lower for word in ["показан", "счетчик", "счётчик"]):
+        return "readings"
+    if any(word in query_lower for word in ["вода", "горяч", "холодн"]):
+        return "water"
+    if any(word in query_lower for word in ["канализ", "засор", "запах"]):
+        return "sewer"
+    return ""
+
+
 def score_chat_entry(query, entry):
     normalized_query = normalize_text(query)
     if not normalized_query:
@@ -1037,6 +1128,51 @@ def score_chat_entry(query, entry):
     return best_score
 
 
+def find_closest_chat_entries(query, top_k=1):
+    normalized_query = normalize_text(query)
+    if not normalized_query:
+        return []
+
+    search_index = get_chat_search_index()
+    vectorizer = search_index["vectorizer"]
+    tfidf_matrix = search_index["matrix"]
+    documents = search_index["documents"]
+    doc_lengths = search_index["doc_lengths"]
+
+    if vectorizer is None or tfidf_matrix is None or not documents:
+        return []
+
+    query_vec = vectorizer.transform([normalized_query])
+    similarities = cosine_similarity(query_vec, tfidf_matrix).flatten()
+    query_len = len(tokenize(normalized_query))
+    detected_scenario = detect_chat_intent_scenario(normalized_query)
+    ranked = []
+
+    for index, similarity in enumerate(similarities):
+        if doc_lengths[index] < query_len:
+            similarity = 0
+
+        entry = CHAT_KNOWLEDGE_BASE[index]
+        lexical_score = score_chat_entry(normalized_query, entry)
+        scenario_boost = 0.2 if detected_scenario and entry.get("scenario") == detected_scenario else 0
+        scenario_penalty = -0.08 if detected_scenario and entry.get("scenario") and entry.get("scenario") != detected_scenario else 0
+        combined_score = (similarity * 0.82) + ((min(lexical_score, 1.5) / 1.5) * 0.18) + scenario_boost + scenario_penalty
+        ranked.append(
+            {
+                "entry": entry,
+                "document": documents[index],
+                "tfidf_score": float(similarity),
+                "lexical_score": float(lexical_score),
+                "scenario_boost": float(scenario_boost),
+                "scenario_penalty": float(scenario_penalty),
+                "score": float(combined_score),
+            }
+        )
+
+    ranked.sort(key=lambda item: item["score"], reverse=True)
+    return ranked[:top_k]
+
+
 def find_best_chat_answer(query):
     normalized_query = normalize_text(query)
     if not normalized_query:
@@ -1050,15 +1186,13 @@ def find_best_chat_answer(query):
             ],
         }
 
-    best_score = 0
-    best_entry = None
-    for entry in CHAT_KNOWLEDGE_BASE:
-        score = score_chat_entry(normalized_query, entry)
-        if score > best_score:
-            best_score = score
-            best_entry = entry
+    best_match = next(iter(find_closest_chat_entries(normalized_query, top_k=1)), None)
+    best_entry = best_match["entry"] if best_match else None
+    best_score = best_match["score"] if best_match else 0
+    best_tfidf_score = best_match["tfidf_score"] if best_match else 0
+    best_lexical_score = best_match["lexical_score"] if best_match else 0
 
-    if not best_entry or best_score < 0.45:
+    if not best_entry or best_score < 0.18 or (best_tfidf_score < 0.08 and best_lexical_score < 0.45):
         return {
             "matched": False,
             "title": "Я не понял вопрос",
@@ -1075,6 +1209,7 @@ def find_best_chat_answer(query):
         "answer": best_entry["answer"],
         "links": transform_links(best_entry.get("links", [])),
         "scenario": best_entry.get("scenario"),
+        "scenario_node": best_entry.get("scenario_node"),
         "score": round(best_score, 3),
     }
 
@@ -1393,10 +1528,12 @@ def get_pdf_fonts():
     if PDF_FONT_CACHE:
         return PDF_FONT_CACHE
 
-    regular_font = "DejaVuSans"
-    bold_font = "DejaVuSans-Bold"
+    regular_font = "Helvetica"
+    bold_font = "Helvetica-Bold"
+    local_fonts_dir = Path(app.root_path) / "static" / "fonts"
 
     regular_candidates = [
+        local_fonts_dir / "DejaVuSans.ttf",
         Path("/var/www/u3471892/data/www/xn--40-plcq9c.xn--p1ai/static/fonts/DejaVuSans.ttf"),
         Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
         Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
@@ -1404,6 +1541,7 @@ def get_pdf_fonts():
         Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
     ]
     bold_candidates = [
+        local_fonts_dir / "DejaVuSans-Bold.ttf",
         Path("/var/www/u3471892/data/www/xn--40-plcq9c.xn--p1ai/static/fonts/DejaVuSans-Bold.ttf"),
         Path("/System/Library/Fonts/Supplemental/Arial Bold.ttf"),
         Path("/System/Library/Fonts/Supplemental/PTSans.ttc"),
@@ -1430,6 +1568,12 @@ def get_pdf_fonts():
             break
         except Exception:
             continue
+
+    if regular_font == "JKH40Regular":
+        try:
+            pdfmetrics.registerFontFamily("JKH40", normal=regular_font, bold=bold_font)
+        except Exception:
+            pass
 
     PDF_FONT_CACHE = (regular_font, bold_font)
     return PDF_FONT_CACHE
