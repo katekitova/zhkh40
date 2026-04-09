@@ -12,22 +12,21 @@
 </section>
 
 <section class="content-section content-section-last">
-    <div class="container document-layout {% if print_mode %}print-layout{% endif %}">
+    <div class="container {% if print_mode %}document-layout print-layout{% else %}docx-preview-layout{% endif %}">
         {% if not print_mode %}
-            <aside class="document-note">
-                <p>* Является примером типового документа. Формулировки можно адаптировать под ситуацию.</p>
-                <p>* Материал предоставлен в информационно-справочных целях и встроен в сайт как рабочий шаблон.</p>
+            <aside class="docx-preview-sidebar">
+                <div class="docx-preview-panel">
+                    <p class="docx-file-type">Формат файла: DOCX</p>
+                    <div class="docx-preview-actions">
+                        <a class="button-secondary" href="{{ url_for('recalculation_fill') }}">Заполнить форму</a>
+                        <a class="button-secondary" href="{{ url_for('knowledge') }}">Назад к базе знаний</a>
+                        <a class="button-primary" href="{{ url_for('static', filename='docs/journeys/ПС 1.docx') }}" download="Образец_заявления_на_перерасчет_ЖКХ.docx">Скачать DOCX</a>
+                    </div>
+                </div>
             </aside>
         {% endif %}
 
-        <div class="document-stage">
-            {% if not print_mode %}
-                <div class="document-toolbar">
-                    <a href="{{ url_for('recalculation_fill') }}">Заполнить форму</a>
-                    <a href="{{ url_for('static', filename='docs/journeys/ПС 1.docx') }}">Исходные сценарии</a>
-                </div>
-            {% endif %}
-
+        <div class="document-stage{% if not print_mode %} docx-preview-stage{% endif %}">
             <article class="document-sheet">
                 <div class="document-sheet-header">
                     <div class="document-recipient">
