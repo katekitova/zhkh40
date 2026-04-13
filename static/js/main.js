@@ -783,7 +783,7 @@
                     }
 
                     if (serviceState.odn_mode === "with_odn") {
-                        fields.push(numberField(period.key, "odn", "Общедомовые нужды", values.odn, "кВт·ч", "Добавляем ориентировочно по базовой ставке"));
+                        fields.push(numberField(period.key, "odn", "Общедомовые нужды", values.odn, "кВт·ч", "Добавляем по базовой ставке"));
                     }
 
                     return [
@@ -1176,9 +1176,11 @@
                 resultNode.innerHTML = [
                     "<h3>" + escapeHtml(result.title) + "</h3>",
                     "<div class=\"calculator-result-list\">",
+                    "<p>Согласно показаниям, сумма квитанции должна быть следующая:</p>",
                     result.rows.map(function (row) {
                         return "<p>Результат за месяц (" + escapeHtml(row.label) + "): <strong>" + currency(row.total) + " руб.</strong></p>";
                     }).join(""),
+                    "<p>Пожалуйста, сверьтесь с квитанцией.</p>",
                     "</div>",
                     largeFamilyHint,
                     details.length ? "<div class=\"calculator-result-meta\">" + details.map(function (detail) {
