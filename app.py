@@ -2,7 +2,7 @@ import json
 import os
 import re
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime
 from difflib import SequenceMatcher
 from io import BytesIO
 from markupsafe import Markup, escape as markup_escape
@@ -1343,11 +1343,35 @@ def collect_search_results(query):
     return results
 
 
+def _parse_known_date(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _format_ru_short_date(value, fallback=""):
+    raw = str(value or "").strip()
+    if not raw:
+        return fallback
+
+    parsed = _parse_known_date(raw)
+    if not parsed:
+        return raw
+    return parsed.strftime("%d.%m.%Y")
 def get_recalc_form_data(source):
     fields = {}
     for key, default_value in RECALC_FORM_DEFAULTS.items():
         value = source.get(key, default_value)
         fields[key] = value.strip() if isinstance(value, str) else value
+    fields["period_from"] = _format_ru_short_date(fields.get("period_from", ""))
+    fields["period_to"] = _format_ru_short_date(fields.get("period_to", ""))
     return fields
 
 
@@ -1356,6 +1380,18 @@ def get_termination_notice_form_data(source):
     for key, default_value in TERMINATION_NOTICE_FORM_DEFAULTS.items():
         value = source.get(key, default_value)
         fields[key] = value.strip() if isinstance(value, str) else value
+
+    date_keys = (
+        "authority_protocol_date",
+        "oss_meeting_date",
+        "contract_date",
+        "termination_effective_date",
+        "sign_date",
+        "protocol_date",
+        "termination_date",
+    )
+    for key in date_keys:
+        fields[key] = _format_ru_short_date(fields.get(key, ""))
     return fields
 
 
@@ -1386,9 +1422,8 @@ def _format_ru_doc_date(value):
     raw = _str_value(value, "")
     if not raw:
         return "«_» _________ 20 ___ г."
-    try:
-        parsed = date.fromisoformat(raw)
-    except ValueError:
+    parsed = _parse_known_date(raw)
+    if not parsed:
         return raw
     month_name = RU_MONTHS.get(parsed.month, "")
     return f"«{parsed.day:02d}» {month_name} {parsed.year} г."
@@ -1402,8 +1437,8 @@ def _company_name(value):
 
 
 def build_recalc_paragraphs(form_data):
-    period_from = form_data["period_from"]
-    period_to = form_data["period_to"]
+    period_from = _format_ru_short_date(form_data["period_from"])
+    period_to = _format_ru_short_date(form_data["period_to"])
     return [
         {"text": "Заявление на перерасчёт по ЖКХ", "align": "center", "bold": True},
         {"text": ""},
@@ -1629,9 +1664,11 @@ def build_recalc_pdf(form_data):
     )
     story.append(Spacer(1, 10))
     story.append(paragraph("Заявление", title_style))
+    period_from = _format_ru_short_date(form_data["period_from"])
+    period_to = _format_ru_short_date(form_data["period_to"])
     story.append(
         paragraph(
-            f"Прошу произвести перерасчёт размера платы за коммунальные услуги за период с {form_data['period_from']} по {form_data['period_to']}.",
+            f"Прошу произвести перерасчёт размера платы за коммунальные услуги за период с {period_from} по {period_to}.",
             body_style,
         )
     )
@@ -2116,5 +2153,3 @@ def admin_update_document():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
