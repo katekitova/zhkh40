@@ -54,7 +54,7 @@ DEFAULT_ABOUT_INTRO = (
     "Сайт сделан как практический помощник по вопросам ЖКХ в Калуге: здесь можно найти разъяснения, "
     "документы, маршруты действий и перейти к нужному разделу без долгого поиска."
 )
-DEFAULT_FOOTER_DISCLAIMER = "Информация носит исключительно справочный характер."
+DEFAULT_FOOTER_DISCLAIMER = "Информация носит справочный характер."
 PDF_FONT_CACHE = None
 TERMINATION_NOTICE_DOC_PATH = "docs/management/templates/Уведомление о расторжении договора с УК.docx"
 
@@ -77,6 +77,8 @@ LEGAL_INLINE_LINK_ALIASES = {
     "ст. 44": "https://www.consultant.ru/cons/cgi/online.cgi?from=51057-0&req=doc&base=LAW&n=511791#b50101afd08dee7f41764d59277937373a2f7655",
     "46 ЖК РФ": "https://www.consultant.ru/cons/cgi/online.cgi?from=51057-0&req=doc&base=LAW&n=511791#219c3257c1aa4b0fb9896079a0f295343e523d37",
     "ст. 45 ЖК РФ": "https://www.consultant.ru/cons/cgi/online.cgi?from=51057-0&req=doc&base=LAW&n=511791#0007bd8e825a6eadd1de1cccb256d04cb5d980c3",
+    "п. 5 ст. 45 ЖК РФ": "https://www.consultant.ru/cons/cgi/online.cgi?from=51057-0&req=doc&base=LAW&n=511791#0007bd8e825a6eadd1de1cccb256d04cb5d980c3",
+    "п. 5 ст 45 ЖК РФ": "https://www.consultant.ru/cons/cgi/online.cgi?from=51057-0&req=doc&base=LAW&n=511791#0007bd8e825a6eadd1de1cccb256d04cb5d980c3",
     "ч. 1 ст. 162 ЖК РФ": "https://www.consultant.ru/cons/cgi/online.cgi?from=51057-0&req=doc&base=LAW&n=511791#14e9738be002fe3ab76c0d580b863aac1ac65fb7",
     "ч. 4 ст. 45 ЖК РФ": "https://www.consultant.ru/cons/cgi/online.cgi?from=51057-0&req=doc&base=LAW&n=511791#0007bd8e825a6eadd1de1cccb256d04cb5d980c3",
     "п. 19–22 Постановления Правительства № 416": "https://www.consultant.ru/cons/cgi/online.cgi?req=doc&base=LAW&n=465381",
